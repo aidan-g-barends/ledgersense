@@ -1,26 +1,94 @@
 @import "tailwindcss";
 
+/* ============================================================
+   LIGHT THEME (default values)
+   ============================================================ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+
+  /* Surfaces: back to front */
+  --canvas: #f5f7fa;
+  --surface-sunken: #eef1f5;
+  --surface: #ffffff;
+  --surface-raised: #f1f4f8;
+
+  /* Lines */
+  --line: #e2e8f0;
+  --line-subtle: #edf1f6;
+  --line-strong: #cbd5e1;
+
+  /* Text */
+  --fg: #0f172a;
+  --fg-muted: #475569;
+  --fg-faint: #64748b;
+
+  /* Semantic signals (darker shades for contrast on white) */
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --positive: #047857;
+  --warning: #b45309;
+  --critical: #dc2626;
 }
 
+/* ============================================================
+   DARK THEME: "Precision Dark"
+   ============================================================ */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --canvas: #0b0f17;
+  --surface-sunken: #101725;
+  --surface: #131b2a;
+  --surface-raised: #1a2438;
+
+  --line: #1e293b;
+  --line-subtle: #162032;
+  --line-strong: #334155;
+
+  --fg: #f8fafc;
+  --fg-muted: #94a3b8;
+  --fg-faint: #7c8ba1;
+
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --positive: #10b981;
+  --warning: #f59e0b;
+  --critical: #ef4444;
+}
+
+/* ============================================================
+   TAILWIND MAPPING: tokens become utility classes
+   ============================================================ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Remove Tailwind's default palette: every colour must be a token */
+  --color-*: initial;
+
+  --color-canvas: var(--canvas);
+  --color-sunken: var(--surface-sunken);
+  --color-surface: var(--surface);
+  --color-raised: var(--surface-raised);
+
+  --color-line: var(--line);
+  --color-line-subtle: var(--line-subtle);
+  --color-line-strong: var(--line-strong);
+
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-faint: var(--fg-faint);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-positive: var(--positive);
+  --color-warning: var(--warning);
+  --color-critical: var(--critical);
+  --color-white: #ffffff;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    @apply bg-canvas text-fg font-sans antialiased;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
