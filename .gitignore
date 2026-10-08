@@ -1,0 +1,21 @@
+# ---------- Secrets ----------
+# Real environment files never go to GitHub.
+.env
+.env.*
+# ...except the template that shows which variables exist (no real values).
+!.env.example
+
+# ---------- Financial data ----------
+# Real bank exports must NEVER be committed. Fake test files live in fixtures/.
+*.csv
+!**/fixtures/**/*.csv
+
+# ---------- OS junk ----------
+.DS_Store
+Thumbs.db
+
+# ---------- IDEs ----------
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
