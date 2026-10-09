@@ -1,4 +1,4 @@
-package com.ledgersense.identity;
+package com.ledgersense.domain;
 
 // NEW: explicit imports instead of jakarta.persistence.*
 // WHY: you can see exactly where each class comes from, and you avoid name clashes.
