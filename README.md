@@ -1,5 +1,8 @@
 # LedgerSense
 
+![Backend CI](https://github.com/aidan-g-barends/ledgersense/actions/workflows/backend-ci.yml/badge.svg)
+![Frontend CI](https://github.com/aidan-g-barends/ledgersense/actions/workflows/frontend-ci.yml/badge.svg)
+
 Finance intelligence for small businesses: import bank statements, auto-categorize
 spending, and surface anomalies (duplicate charges, unusual spend, price creep)
 with plain-language explanations.
