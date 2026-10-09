@@ -14,7 +14,7 @@ import java.net.URI;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/organization")
+@RequestMapping("/api/organizations")
 public class OrganizationController {
 
     private IOrganizationService organizationService;
