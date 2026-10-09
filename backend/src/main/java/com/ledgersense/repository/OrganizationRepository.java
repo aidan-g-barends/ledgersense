@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface OrganizationRepository extends JpaRepository<UUID, Organization> {
+public interface OrganizationRepository extends JpaRepository<Organization, UUID> {
 
     List<Organization> findByName(String name);
 
-    List<Organization> findByCurrency(String baseCurrency);
+    List<Organization> findByBaseCurrency(String baseCurrency);
 }

@@ -1,4 +1,4 @@
-package com.ledgersense.service;
+package com.ledgersense.service.impl;
 
 import com.ledgersense.domain.Organization;
 
