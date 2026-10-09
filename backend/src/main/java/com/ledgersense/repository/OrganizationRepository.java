@@ -12,4 +12,5 @@ public interface OrganizationRepository extends JpaRepository<UUID, Organization
 
     List<Organization> findByName(String name);
 
+    List<Organization> findByCurrency(String baseCurrency);
 }
