@@ -26,4 +26,18 @@ public class Helper {
             return false;
         }
 
-    }}
+    }
+
+    public static boolean isValidEmail(String email){
+        if(isNullOrEmpty(email)){
+            return false;
+        }
+        String e = email.strip();
+        int at = e.indexOf('@');
+        return at > 0
+                && at == e.lastIndexOf('@')
+                && e.indexOf('.', at) > at + 1
+                && !e.endsWith(".");
+    }
+
+}
