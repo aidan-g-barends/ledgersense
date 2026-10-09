@@ -11,15 +11,15 @@ public class OrganizationFactory {
     public static Organization createOrganization( String name, String baseCurrency){
 
         if(Helper.isNullOrEmpty(name) || Helper.isNullOrEmpty(baseCurrency)){
-            throw new IllegalArgumentException("Organization name cannot be null or empty! ");
+           return null;
         }
 
         if (!Helper.isWithinLength(name.strip(), 150)) {
-            throw new IllegalArgumentException("Organization name must be at most 150 characters");
+           return null;
         }
 
         if (!Helper.isValidCurrencyCode(baseCurrency)) {
-            throw new IllegalArgumentException("Base currency must be a valid 3-letter currency code");
+            return null;
         }
 
         return new Organization.Builder()
