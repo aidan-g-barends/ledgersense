@@ -91,7 +91,6 @@ public class AppUser {
                 "id=" + id +
                 ", orgId=" + orgId +
                 ", email='" + email + '\'' +
-                ", passwordHash='" + passwordHash + '\'' +
                 ", role=" + role +
                 ", lastLoginAt=" + lastLoginAt +
                 ", createdAt=" + createdAt +

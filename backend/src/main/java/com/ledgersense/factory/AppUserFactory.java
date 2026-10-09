@@ -4,6 +4,7 @@ import com.ledgersense.domain.AppUser;
 import com.ledgersense.domain.Role;
 import com.ledgersense.util.Helper;
 
+import java.util.Locale;
 import java.util.UUID;
 
 public class AppUserFactory {
@@ -23,7 +24,7 @@ public class AppUserFactory {
 
         return new AppUser.Builder()
                 .setOrgId(orgId)
-                .setEmail(email)
+                .setEmail(email.strip().toLowerCase(Locale.ROOT))
                 .setPasswordHash(passwordHash)
                 .setRole(role)
                 .build();
