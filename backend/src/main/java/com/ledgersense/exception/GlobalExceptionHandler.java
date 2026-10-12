@@ -47,4 +47,15 @@ public class GlobalExceptionHandler {
         problem.setTitle("Already exists");
         return problem;
     }
+
+    // NEW: safety net. If two people register the same email at the exact same moment,
+// both pass existsByEmail(), but the DB's UNIQUE index rejects the second.
+// Without this handler that would be a 500. Now it's a clean 409.
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrity(org.springframework.dao.DataIntegrityViolationException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, "This conflicts with existing data");
+        problem.setTitle("Already exists");
+        return problem;
+    }
 }
