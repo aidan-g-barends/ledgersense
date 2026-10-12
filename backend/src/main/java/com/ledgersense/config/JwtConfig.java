@@ -24,7 +24,7 @@ public class JwtConfig {
         try{
             bytes = Base64.getDecoder().decode(base64Secret);
         }
-        catch(IllegalArgumentException){
+        catch(IllegalArgumentException e){
             throw new IllegalStateException("JWT_SECRET must be at least 32 bytes. Use: openssl rand -base64 48");
         }
         return new SecretKeySpec(bytes, "HmacSHA256");
