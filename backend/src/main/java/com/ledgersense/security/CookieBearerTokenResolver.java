@@ -20,7 +20,7 @@ public class CookieBearerTokenResolver implements BearerTokenResolver {
 
         Cookie[] cookies = request.getCookies();
 
-        if(cookie == null){
+        if(cookies == null){
             return null;
         }
 
