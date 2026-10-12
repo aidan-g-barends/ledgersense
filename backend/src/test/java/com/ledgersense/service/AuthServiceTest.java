@@ -3,6 +3,8 @@ package com.ledgersense.service;
 import com.ledgersense.domain.AppUser;
 import com.ledgersense.domain.Organization;
 import com.ledgersense.domain.Role;
+import com.ledgersense.exception.InvalidCredentialsException;
+import com.ledgersense.exception.ResourceNotFoundException;
 import com.ledgersense.factory.AppUserFactory;
 import com.ledgersense.factory.OrganizationFactory;
 import com.ledgersense.service.impl.IAppUserService;
@@ -60,5 +62,38 @@ class AuthServiceTest {
         });
 
         Mockito.verify(organizationService, Mockito.never()).create(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void login() {
+        AppUser user = AppUserFactory.createAppUser(UUID.randomUUID(), "aidan@digitalsolutions.co.za", "{bcrypt}hash", Role.OWNER);
+        Mockito.when(appUserService.findByEmail("aidan@digitalsolutions.co.za")).thenReturn(user);
+        Mockito.when(passwordEncoder.matches("correct-horse-battery", "{bcrypt}hash")).thenReturn(true);
+
+        AppUser result = authService.login("aidan@digitalsolutions.co.za", "correct-horse-battery");
+
+        assertNotNull(result.getLastLoginAt());
+    }
+
+    @Test
+    void login_whenWrongPassword() {
+        AppUser user = AppUserFactory.createAppUser(UUID.randomUUID(), "aidan@digitalsolutions.co.za", "{bcrypt}hash", Role.OWNER);
+        Mockito.when(appUserService.findByEmail("aidan@digitalsolutions.co.za")).thenReturn(user);
+        Mockito.when(passwordEncoder.matches("wrong-password", "{bcrypt}hash")).thenReturn(false);
+
+        assertThrows(InvalidCredentialsException.class, () -> {
+            authService.login("aidan@digitalsolutions.co.za", "wrong-password");
+        });
+    }
+
+    // Unknown email gets the SAME exception as a wrong password
+    @Test
+    void login_whenUnknownEmail() {
+        Mockito.when(appUserService.findByEmail("nobody@x.co.za"))
+                .thenThrow(new ResourceNotFoundException("User not found"));
+
+        assertThrows(InvalidCredentialsException.class, () -> {
+            authService.login("nobody@x.co.za", "whatever-password");
+        });
     }
 }
