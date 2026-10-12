@@ -5,4 +5,6 @@ import com.ledgersense.domain.AppUser;
 public interface IAuthService {
 
     AppUser register(String businessName, String email, String password);
+
+    AppUser login(String email, String password);
 }

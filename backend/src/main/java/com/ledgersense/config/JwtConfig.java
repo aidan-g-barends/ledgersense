@@ -18,13 +18,17 @@ import java.util.Base64;
 public class JwtConfig {
 
     @Bean
-    public SecretKey jwtSigningKey(@Value("${app.jwtsecret}") String base64Secret){
+    public SecretKey jwtSigningKey(@Value("${app.jwt.secret}") String base64Secret){
         byte[] bytes;
 
         try{
             bytes = Base64.getDecoder().decode(base64Secret);
         }
         catch(IllegalArgumentException e){
+            throw new IllegalStateException("JWT_SECRET must be valid Base64. Use: openssl rand -base64 48");
+        }
+        // HS256 needs a key of at least 256 bits (32 bytes); also catches an empty secret
+        if (bytes.length < 32) {
             throw new IllegalStateException("JWT_SECRET must be at least 32 bytes. Use: openssl rand -base64 48");
         }
         return new SecretKeySpec(bytes, "HmacSHA256");
