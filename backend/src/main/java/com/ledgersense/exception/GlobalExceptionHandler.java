@@ -58,4 +58,12 @@ public class GlobalExceptionHandler {
         problem.setTitle("Already exists");
         return problem;
     }
+
+    // 401 = "we don't know who you are" (vs 403 = "we know you, but you're not allowed")
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ProblemDetail handleInvalidCredentials(InvalidCredentialsException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        problem.setTitle("Login failed");
+        return problem;
+    }
 }
