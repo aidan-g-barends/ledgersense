@@ -23,31 +23,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    env:
+      # CI-only test key. Not used anywhere real, so it's fine in the file.
+      JWT_SECRET: Y2ktb25seS10ZXN0LXNlY3JldC1ub3QtdXNlZC1hbnl3aGVyZS1yZWFsLTEyMzQ1Ng==
+
     defaults:
       run:
         working-directory: backend
-
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_DB: ledgersense
-          POSTGRES_USER: ledgersense
-          POSTGRES_PASSWORD: ci-only-password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U ledgersense -d ledgersense"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
-    env:
-      DB_HOST: localhost
-      DB_PORT: 5432
-      DB_NAME: ledgersense
-      DB_USER: ledgersense
-      DB_PASSWORD: ci-only-password
 
     steps:
       - name: Check out code
