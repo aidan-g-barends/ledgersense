@@ -1,6 +1,7 @@
 package com.ledgersense.domain;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -22,11 +23,13 @@ public class RefreshToken {
     @Column(name = "token_hash", nullable = false, updatable = false)
     private String tokenHash;
 
-    @Column(name = "exipres_at", nullable = false, updatable = false)
+    @Column(name = "expires_at", nullable = false, updatable = false)
     private Instant expiresAt;
 
+    @Column(name = "revoked_at")
     private Instant revokedAt;
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -48,6 +51,11 @@ public class RefreshToken {
 
     public boolean isRevoked(){
         return revokedAt != null;
+    }
+
+    // Expired once 'now' reaches expiresAt (not just after it)
+    public boolean isExpired(Instant now){
+        return !now.isBefore(expiresAt);
     }
 
     public UUID getId() {

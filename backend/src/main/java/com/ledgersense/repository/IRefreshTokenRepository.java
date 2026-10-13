@@ -12,7 +12,7 @@ import java.util.UUID;
 
 public interface IRefreshTokenRepository extends JpaRepository<RefreshToken, UUID> {
 
-    Optional<RefreshToken> findsByTokenHash(String tokenHash);
+    Optional<RefreshToken> findByTokenHash(String tokenHash);
 
     // NEW: @Query = write the query yourself when the method name can't express it.
     // @Modifying = this query CHANGES data (UPDATE), not just reads.
