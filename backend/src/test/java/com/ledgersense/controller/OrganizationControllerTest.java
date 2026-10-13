@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -29,6 +30,7 @@ class OrganizationControllerTest {
     @Test
     void create() throws Exception {
         mockMvc.perform(post("/api/organizations")
+                        .with(csrf())        // NEW: adds a valid CSRF token, like the real frontend will
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -44,6 +46,7 @@ class OrganizationControllerTest {
     @Test
     void create_whenNameBlank() throws Exception {
         mockMvc.perform(post("/api/organizations")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {

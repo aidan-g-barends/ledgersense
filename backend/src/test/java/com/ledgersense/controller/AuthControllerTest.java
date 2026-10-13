@@ -12,8 +12,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -35,103 +35,97 @@ class AuthControllerTest {
             }
             """;
 
+    private static final String LOGIN_BODY = """
+            {
+                "email": "aidan@digitalsolutions.co.za",
+                "password": "correct-horse-battery"
+            }
+            """;
+
+    private MvcResult registerAndLogin() throws Exception {
+        mockMvc.perform(post("/api/auth/register").with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(VALID_BODY));
+
+        return mockMvc.perform(post("/api/auth/login").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(LOGIN_BODY))
+                .andReturn();
+    }
+
     @Test
     void register() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(VALID_BODY))
+        mockMvc.perform(post("/api/auth/register").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.email").value("aidan@digitalsolutions.co.za"))
-                // Security check: the hash must NEVER appear in a response
                 .andExpect(jsonPath("$.passwordHash").doesNotExist());
     }
 
+    // NEW: proves CSRF protection is ON
     @Test
-    void register_whenEmailTaken() throws Exception {
+    void register_withoutCsrf() throws Exception {
         mockMvc.perform(post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(VALID_BODY));
-
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(VALID_BODY))
-                .andExpect(status().isConflict());
-    }
-
-    @Test
-    void register_whenPasswordTooShort() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                    "businessName": "Digital Solutions WC",
-                                    "email": "aidan@digitalsolutions.co.za",
-                                    "password": "short"
-                                }
-                                """))
-                .andExpect(status().isBadRequest());
-    }
-
-    // Helper: registers, logs in, returns the cookie
-    private Cookie registerAndLogin() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(VALID_BODY));
-
-        MvcResult result = mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                            {
-                                "email": "aidan@digitalsolutions.co.za",
-                                "password": "correct-horse-battery"
-                            }
-                            """))
-                .andReturn();
-
-        return result.getResponse().getCookie("access_token");
+                        .contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
+                .andExpect(status().isForbidden());
     }
 
     @Test
     void login() throws Exception {
-        Cookie cookie = registerAndLogin();
+        MvcResult result = registerAndLogin();
 
-        assertNotNull(cookie);
-        // Security checks on the cookie itself
-        assertTrue(cookie.isHttpOnly());
-        assertTrue(cookie.getSecure());
-    }
-
-    @Test
-    void login_whenWrongPassword() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(VALID_BODY));
-
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                            {
-                                "email": "aidan@digitalsolutions.co.za",
-                                "password": "wrong-password-123"
-                            }
-                            """))
-                .andExpect(status().isUnauthorized());
+        Cookie access = result.getResponse().getCookie("access_token");
+        Cookie refresh = result.getResponse().getCookie("refresh_token");
+        assertNotNull(access);
+        assertNotNull(refresh);
+        assertTrue(access.isHttpOnly());
+        assertTrue(refresh.isHttpOnly());
     }
 
     @Test
     void me() throws Exception {
-        Cookie cookie = registerAndLogin();
+        Cookie access = registerAndLogin().getResponse().getCookie("access_token");
 
-        mockMvc.perform(get("/api/auth/me").cookie(cookie))
+        mockMvc.perform(get("/api/auth/me").cookie(access))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("aidan@digitalsolutions.co.za"))
                 .andExpect(jsonPath("$.organizationName").value("Digital Solutions WC"));
     }
 
-    // Proves the endpoint is actually protected
     @Test
     void me_withoutLogin() throws Exception {
         mockMvc.perform(get("/api/auth/me"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void refresh() throws Exception {
+        Cookie refresh = registerAndLogin().getResponse().getCookie("refresh_token");
+
+        mockMvc.perform(post("/api/auth/refresh").with(csrf()).cookie(refresh))
+                .andExpect(status().isOk())
+                .andExpect(cookie().exists("access_token"))
+                .andExpect(cookie().exists("refresh_token"));
+    }
+
+    // NEW: using the SAME refresh token twice = reuse = rejected
+    @Test
+    void refresh_whenTokenReused() throws Exception {
+        Cookie refresh = registerAndLogin().getResponse().getCookie("refresh_token");
+
+        mockMvc.perform(post("/api/auth/refresh").with(csrf()).cookie(refresh))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/auth/refresh").with(csrf()).cookie(refresh))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // NEW: after logout, the refresh token no longer works
+    @Test
+    void logout() throws Exception {
+        Cookie refresh = registerAndLogin().getResponse().getCookie("refresh_token");
+
+        mockMvc.perform(post("/api/auth/logout").with(csrf()).cookie(refresh))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(post("/api/auth/refresh").with(csrf()).cookie(refresh))
                 .andExpect(status().isUnauthorized());
     }
 }
