@@ -18,21 +18,23 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                // CHANGED: CSRF is ON now. Our cookies are sent automatically by the browser,
+                // so another site could trigger requests with them. CSRF blocks that.
+                // spa() = Spring sets an XSRF-TOKEN cookie that our frontend reads and sends
+                // back as an X-XSRF-TOKEN header. Another site can't read our cookie, so it can't fake the header.
+                .csrf(csrf -> csrf.spa())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // CHANGED: login added to the open list
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/actuator/health", "/error").permitAll()
+                        // CHANGED: refresh, logout and csrf added
+                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh",
+                                "/api/auth/logout", "/api/auth/csrf", "/actuator/health", "/error").permitAll()
                         .requestMatchers("/api/organizations/**").permitAll()
                         .anyRequest().authenticated())
-                // NEW: check the JWT (from our cookie) on every protected request.
-                // Missing / expired / tampered token -> 401 automatically.
                 .oauth2ResourceServer(oauth -> oauth
                         .bearerTokenResolver(new CookieBearerTokenResolver())
                         .jwt(Customizer.withDefaults()));
-
         return http.build();
     }
 
