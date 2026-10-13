@@ -31,3 +31,4 @@ app:
     # No default on purpose: the app refuses to start without a real secret
     secret: ${JWT_SECRET:}
     access-token-minutes: 15
+  refresh-token-days: 7
