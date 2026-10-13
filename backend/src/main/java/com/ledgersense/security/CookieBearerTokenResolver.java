@@ -11,25 +11,24 @@ public class CookieBearerTokenResolver implements BearerTokenResolver {
 
 
     @Override
-    public @Nullable String resolve(HttpServletRequest request) {
-
+    public String resolve(HttpServletRequest request) {
+        // CHANGED: ignore the access cookie on ALL /api/auth/* endpoints except /me.
+        // WHY: refresh and logout must work even when the access token has EXPIRED.
+        // Otherwise the expired token gets a 401 before refresh can even run.
         String path = request.getRequestURI();
-        if (path.startsWith("/api/auth/login") || path.startsWith("/api/auth/register")) {
+        if (path.startsWith("/api/auth/") && !path.equals("/api/auth/me")) {
             return null;
         }
 
         Cookie[] cookies = request.getCookies();
-
-        if(cookies == null){
+        if (cookies == null) {
             return null;
         }
-
-        for(Cookie cookie : cookies){
-            if(ACCESS_TOKEN_COOKIE.equals(cookie.getName())){
+        for (Cookie cookie : cookies) {
+            if (AuthCookies.ACCESS.equals(cookie.getName())) {
                 return cookie.getValue();
             }
         }
-
         return null;
     }
 }
