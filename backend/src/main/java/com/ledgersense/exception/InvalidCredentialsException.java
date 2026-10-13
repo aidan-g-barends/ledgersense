@@ -6,4 +6,9 @@ public class InvalidCredentialsException extends RuntimeException {
 
         super("Invalid email or password");
     }
+
+    // NEW: second constructor so refresh can say something more accurate than "wrong password"
+    public InvalidCredentialsException(String message) {
+        super(message);
+    }
 }
