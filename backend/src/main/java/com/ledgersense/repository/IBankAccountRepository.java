@@ -14,5 +14,5 @@ public interface IBankAccountRepository extends JpaRepository <BankAccount, UUID
 
     Optional<BankAccount> findByIdAndOrgId(UUID id, UUID orgId);
 
-    boolean existsByOrgIdAndBankAndAccountLast4(UUID id, Bank bank, String accountLast4);
+    boolean existsByOrgIdAndBankAndAccountLast4(UUID orgId, Bank bank, String accountLast4);
 }
