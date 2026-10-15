@@ -14,7 +14,7 @@ public class BankAccountFactory {
             return null;
         }
 
-        if(Helper.isNullOrEmpty(name) || Helper.isWithinLength(name.stip(), 100)){
+        if(Helper.isNullOrEmpty(name) || Helper.isWithinLength(name.strip() , 100)){
             return null;
         }
 
