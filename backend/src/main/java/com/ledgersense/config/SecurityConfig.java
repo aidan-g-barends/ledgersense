@@ -30,7 +30,6 @@ public class SecurityConfig {
                         // CHANGED: refresh, logout and csrf added
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh",
                                 "/api/auth/logout", "/api/auth/csrf", "/actuator/health", "/error").permitAll()
-                        .requestMatchers("/api/organizations/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth
                         .bearerTokenResolver(new CookieBearerTokenResolver())
