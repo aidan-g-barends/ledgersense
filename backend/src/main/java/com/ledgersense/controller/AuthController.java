@@ -6,13 +6,16 @@ import com.ledgersense.dto.LoginRequest;
 import com.ledgersense.dto.MeResponse;
 import com.ledgersense.dto.RegisterRequest;
 import com.ledgersense.dto.RegisterResponse;
+import com.ledgersense.exception.InvalidCredentialsException;
 import com.ledgersense.security.AuthCookies;
 import com.ledgersense.security.JwtService;
 import com.ledgersense.service.impl.IAppUserService;
 import com.ledgersense.service.impl.IAuthService;
+import com.ledgersense.service.impl.ILoginAttemptService;
 import com.ledgersense.service.impl.IOrganizationService;
 import com.ledgersense.service.impl.IRefreshTokenService;
 import com.ledgersense.service.impl.IRefreshTokenService.RotationResult;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,6 +25,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Locale;
 import java.util.UUID;
 
 @RestController
@@ -33,15 +37,18 @@ public class AuthController {
     private final IRefreshTokenService refreshTokenService;
     private final IAppUserService appUserService;
     private final IOrganizationService organizationService;
+    private final ILoginAttemptService loginAttemptService;
 
     public AuthController(IAuthService authService, JwtService jwtService,
                           IRefreshTokenService refreshTokenService,
-                          IAppUserService appUserService, IOrganizationService organizationService) {
+                          IAppUserService appUserService, IOrganizationService organizationService,
+                          ILoginAttemptService loginAttemptService) {
         this.authService = authService;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
         this.appUserService = appUserService;
         this.organizationService = organizationService;
+        this.loginAttemptService = loginAttemptService;
     }
 
     @PostMapping("/register")
@@ -51,9 +58,21 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<MeResponse> login(@Valid @RequestBody LoginRequest request) {
-        AppUser user = authService.login(request.email(), request.password());
-        // CHANGED: login now also issues a refresh token
+    public ResponseEntity<MeResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {   // CHANGED: need the IP
+        // NEW: key = normalised email + caller IP
+        String key = request.email().strip().toLowerCase(Locale.ROOT) + "|" + httpRequest.getRemoteAddr();
+        loginAttemptService.checkAllowed(key);   // NEW: blocked? 429 before we even check the password
+
+        AppUser user;
+        try {
+            user = authService.login(request.email(), request.password());
+        } catch (InvalidCredentialsException ex) {
+            loginAttemptService.recordFailure(key);   // NEW: add a tally
+            throw ex;                                 // still a 401 for this attempt
+        }
+        loginAttemptService.recordSuccess(key);      // NEW: rub the tally out
+
+        // unchanged from here: issue refresh token, return withAuthCookies(...)
         String refreshToken = refreshTokenService.issue(user.getId());
         return withAuthCookies(user, refreshToken);
     }
@@ -99,5 +118,5 @@ public class AuthController {
                 .header(HttpHeaders.SET_COOKIE, AuthCookies.access(accessToken, jwtService.getAccessTokenTtl()).toString())
                 .header(HttpHeaders.SET_COOKIE, AuthCookies.refresh(refreshToken, refreshTokenService.getTtl()).toString())
                 .body(MeResponse.from(user, org));
-    }/////////////////////////
+    }
 }
