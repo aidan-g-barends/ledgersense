@@ -39,5 +39,9 @@ public class Helper {
                 && e.indexOf('.', at) > at + 1
                 && !e.endsWith(".");
     }
+    // NEW: exactly 4 digits, nothing else. "1234" ok, "12345678" or "12a4" not.
+    public static boolean isLast4Digits(String value) {
+        return value != null && value.matches("[0-9]{4}");
+    }
 
 }
