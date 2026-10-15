@@ -128,4 +128,32 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/refresh").with(csrf()).cookie(refresh))
                 .andExpect(status().isUnauthorized());
     }
+
+    // NEW: 5 wrong passwords, then even the RIGHT password gets 429
+    @Test
+    void login_tooManyAttempts() throws Exception {
+        mockMvc.perform(post("/api/auth/register").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"businessName":"Locked Ltd","email":"locked@acme.co.za","password":"correct-horse-battery"}
+                                """))
+                .andExpect(status().isCreated());
+
+        for (int i = 0; i < 5; i++) {
+            mockMvc.perform(post("/api/auth/login").with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"email":"locked@acme.co.za","password":"wrong-password-123"}
+                                    """))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        mockMvc.perform(post("/api/auth/login").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"locked@acme.co.za","password":"correct-horse-battery"}
+                                """))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().exists("Retry-After"));
+    }
 }
