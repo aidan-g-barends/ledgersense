@@ -28,7 +28,7 @@ public class BankAccount {
     private Bank bank;
 
     @JdbcTypeCode(SqlTypes.CHAR)
-    @Column(name="account_last", nullable = false, length = 4 , updatable = false)
+    @Column(name="account_last4", nullable = false, length = 4 , updatable = false)
     private String accountLast4;
 
     @JdbcTypeCode(SqlTypes.CHAR)

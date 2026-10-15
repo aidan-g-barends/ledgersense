@@ -9,6 +9,11 @@ public class Helper {
         return string == null || string.isEmpty();
     }
 
+    // NEW: like isNullOrEmpty, but "   " (only spaces/tabs) also counts as blank
+    public static boolean isNullOrBlank(String string){
+        return string == null || string.isBlank();
+    }
+
     public static boolean isWithinLength(String value, int max) {
         return value != null && value.length() <= max;
     }

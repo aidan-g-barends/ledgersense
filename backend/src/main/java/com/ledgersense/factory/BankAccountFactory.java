@@ -4,6 +4,7 @@ import com.ledgersense.domain.Bank;
 import com.ledgersense.domain.BankAccount;
 import com.ledgersense.util.Helper;
 
+import java.util.Locale;
 import java.util.UUID;
 
 public class BankAccountFactory {
@@ -14,20 +15,31 @@ public class BankAccountFactory {
             return null;
         }
 
-        if(Helper.isNullOrEmpty(name) || Helper.isWithinLength(name.strip() , 100)){
+        // CHANGED: isNullOrBlank (rejects "   "), and ! on isWithinLength (reject if TOO LONG, not if it fits)
+        if(Helper.isNullOrBlank(name) || !Helper.isWithinLength(name.strip(), 100)){
             return null;
         }
 
-        if(Helper.isLast4Digits(accountLast4)){
+        // CHANGED: ! added. Reject when it is NOT exactly 4 digits.
+        if(!Helper.isLast4Digits(accountLast4)){
+            return null;
+        }
+
+        // CHANGED: normalise first, THEN validate. "zar" becomes "ZAR" before the check.
+        if (Helper.isNullOrBlank(currency)) {
+            return null;
+        }
+        String currencyCode = currency.strip().toUpperCase(Locale.ROOT);
+        if (!Helper.isValidCurrencyCode(currencyCode)) {
             return null;
         }
 
         return new BankAccount.Builder()
                 .setOrgId(orgId)
-                .setName(name)
+                .setName(name.strip())
                 .setBank(bank)
                 .setAccountLast4(accountLast4)
-                .setCurrency(currency)
+                .setCurrency(currencyCode) // CHANGED: use the already-normalised code
                 .build();
 
     }
