@@ -7,6 +7,7 @@ import com.ledgersense.exception.InvalidCredentialsException;
 import com.ledgersense.exception.ResourceNotFoundException;
 import com.ledgersense.service.impl.IAppUserService;
 import com.ledgersense.service.impl.IAuthService;
+import com.ledgersense.service.impl.ICategoryService;
 import com.ledgersense.service.impl.IOrganizationService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,16 +25,19 @@ public class AuthService implements IAuthService {
     private  IOrganizationService organizationService;
     private  IAppUserService appUserService;
     private  PasswordEncoder passwordEncoder;
+    private final ICategoryService categoryService; // NEW
 
     // NEW: a fake hash used when the email doesn't exist (see login below)
     private final String dummyHash;
 
 
-    public AuthService(IOrganizationService organizationService, IAppUserService appUserService, PasswordEncoder passwordEncoder){
+    public AuthService(IOrganizationService organizationService, IAppUserService appUserService, PasswordEncoder passwordEncoder,
+                       ICategoryService categoryService){
 
         this.organizationService = organizationService;
         this.appUserService = appUserService;
         this.passwordEncoder = passwordEncoder;
+        this.categoryService = categoryService;
         this.dummyHash = passwordEncoder.encode("timing-attack-dummy-password");
     }
     @Override
@@ -43,6 +47,11 @@ public class AuthService implements IAuthService {
         validatePassword(password);
 
         Organization organization = organizationService.create(businessName, "ZAR");
+
+        // NEW: give the new org its starter categories.
+        // WHY here: register is @Transactional, so if seeding fails, the org + user roll back too.
+        categoryService.seedDefaults(organization.getId());
+
         String passwordHash = passwordEncoder.encode(password);
         return appUserService.create(organization.getId(), email, passwordHash, Role.OWNER);
     }

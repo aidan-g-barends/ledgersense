@@ -8,6 +8,7 @@ import com.ledgersense.exception.ResourceNotFoundException;
 import com.ledgersense.factory.AppUserFactory;
 import com.ledgersense.factory.OrganizationFactory;
 import com.ledgersense.service.impl.IAppUserService;
+import com.ledgersense.service.impl.ICategoryService;
 import com.ledgersense.service.impl.IOrganizationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,12 +31,15 @@ class AuthServiceTest {
     private IAppUserService appUserService;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private ICategoryService categoryService; // NEW
 
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(organizationService, appUserService, passwordEncoder);
+        // CHANGED: categoryService added, same order as AuthService's constructor
+        authService = new AuthService(organizationService, appUserService, passwordEncoder, categoryService);
     }
 
     @Test
@@ -52,6 +56,7 @@ class AuthServiceTest {
         AppUser result = authService.register("Digital Solutions WC", "aidan@digitalsolutions.co.za", "correct-horse-battery");
 
         assertEquals("aidan@digitalsolutions.co.za", result.getEmail());
+        Mockito.verify(categoryService).seedDefaults(Mockito.any()); // NEW: proves register triggers seeding
     }
 
     // A short password stops everything BEFORE an org is created
