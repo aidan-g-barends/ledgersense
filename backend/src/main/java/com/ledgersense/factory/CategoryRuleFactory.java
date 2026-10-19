@@ -7,7 +7,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 public class CategoryRuleFactory {
-    public static CategoryRule create(UUID orgId, UUID categoryId, String keyword){
+    public static CategoryRule createCategoryRule(UUID orgId, UUID categoryId, String keyword){
         if(orgId == null || categoryId == null || Helper.isNullOrEmpty(keyword)){
             return null;
         }
