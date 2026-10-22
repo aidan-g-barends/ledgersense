@@ -2,16 +2,16 @@ package com.ledgersense.repository;
 
 import com.ledgersense.domain.BankTransaction;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.Optional;
 import java.util.UUID;
 
-public interface BankTransactionRepository extends JpaRepository<BankTransaction, UUID> {
+// CHANGED: added JpaSpecificationExecutor. Gives us findAll(spec, pageable) for filtered paging.
+public interface BankTransactionRepository extends JpaRepository<BankTransaction, UUID>,
+        JpaSpecificationExecutor<BankTransaction> {
 
     Optional<BankTransaction> findByIdAndOrgId(UUID id, UUID orgId);
 
-    // Used during import: "have we already saved this exact row?"
     boolean existsByBankAccountIdAndFingerprint(UUID bankAccountId, String fingerprint);
-
-    // The paginated, filtered list query comes next session (Wed's plan slot)
 }
