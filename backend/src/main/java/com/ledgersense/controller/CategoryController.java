@@ -1,10 +1,12 @@
 package com.ledgersense.controller;
 
+import com.ledgersense.domain.AuditAction;
 import com.ledgersense.domain.Category;
 import com.ledgersense.dto.CategoryResponse;
 import com.ledgersense.dto.CreateCategoryRequest;
 import com.ledgersense.dto.RenameCategoryRequest;
 import com.ledgersense.security.CurrentUser;
+import com.ledgersense.service.impl.IAuditService;
 import com.ledgersense.service.impl.ICategoryService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -22,9 +24,11 @@ import java.util.UUID;
 public class CategoryController {
 
     private final ICategoryService categoryService;
+    private final IAuditService auditService;
 
-    public CategoryController(ICategoryService categoryService) {
+    public CategoryController(ICategoryService categoryService, IAuditService auditService) {
         this.categoryService = categoryService;
+        this.auditService = auditService;
     }
 
     @PostMapping
@@ -32,6 +36,8 @@ public class CategoryController {
                                                    @Valid @RequestBody CreateCategoryRequest request) {
         CurrentUser current = CurrentUser.from(jwt);
         Category category = categoryService.create(current.orgId(), request.name(), request.type());
+        auditService.record(AuditAction.CATEGORY_CREATED, current.orgId(), current.id(),
+                category.getId(), category.getName()); // NEW
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}").buildAndExpand(category.getId()).toUri();
@@ -56,7 +62,10 @@ public class CategoryController {
     public CategoryResponse rename(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
                                    @Valid @RequestBody RenameCategoryRequest request) {
         CurrentUser current = CurrentUser.from(jwt);
-        return CategoryResponse.from(categoryService.rename(id, current.orgId(), request.name()));
+        Category category = categoryService.rename(id, current.orgId(), request.name()); // CHANGED
+        auditService.record(AuditAction.CATEGORY_RENAMED, current.orgId(), current.id(),
+                id, category.getName()); // NEW
+        return CategoryResponse.from(category);
     }
 
     // No DELETE yet, on purpose: once transactions point at categories, deleting one
