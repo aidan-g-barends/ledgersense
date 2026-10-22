@@ -1,8 +1,11 @@
 package com.ledgersense.controller;
 
+import com.ledgersense.domain.AuditAction;
+import com.ledgersense.domain.Organization;
 import com.ledgersense.dto.OrganizationResponse;
 import com.ledgersense.dto.RenameOrganizationRequest;
 import com.ledgersense.security.CurrentUser;
+import com.ledgersense.service.impl.IAuditService;
 import com.ledgersense.service.impl.IOrganizationService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,9 +17,11 @@ import org.springframework.web.bind.annotation.*;
 public class OrganizationController {
 
     private final IOrganizationService organizationService;
+    private final IAuditService auditService;
 
-    public OrganizationController(IOrganizationService organizationService) {
+    public OrganizationController(IOrganizationService organizationService, IAuditService auditService) {
         this.organizationService = organizationService;
+        this.auditService = auditService;
     }
 
     // CHANGED: no POST anymore. Orgs are only created through /api/auth/register.
@@ -31,6 +36,9 @@ public class OrganizationController {
     public OrganizationResponse rename(@AuthenticationPrincipal Jwt jwt,
                                        @Valid @RequestBody RenameOrganizationRequest request) {
         CurrentUser current = CurrentUser.from(jwt); // NEW
-        return OrganizationResponse.from(organizationService.rename(current.orgId(), request.name()));
+        Organization organization = organizationService.rename(current.orgId(), request.name()); // CHANGED
+        auditService.record(AuditAction.ORGANIZATION_RENAMED, current.orgId(), current.id(),
+                current.orgId(), organization.getName()); // NEW
+        return OrganizationResponse.from(organization);
     }
 }
