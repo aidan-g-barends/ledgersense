@@ -10,7 +10,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -21,42 +22,48 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
-@Transactional
+// CHANGED: no class-level @Transactional. AuditService.record() runs in its own transaction
+// (REQUIRES_NEW), and it can't see rows from a test transaction that never commits, so the
+// audit insert failed its foreign keys. Tests now commit for real, like the other controller tests.
 class AuthControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    private static final String VALID_BODY = """
+    // CHANGED: a fresh email per test (JUnit makes a new instance for every test),
+    // because rows are no longer rolled back between tests
+    private final String id = UUID.randomUUID().toString();
+
+    private final String validBody = """
             {
                 "businessName": "Digital Solutions WC",
-                "email": "Aidan@DigitalSolutions.co.za",
+                "email": "Aidan+%s@DigitalSolutions.co.za",
                 "password": "correct-horse-battery"
             }
-            """;
+            """.formatted(id);
 
-    private static final String LOGIN_BODY = """
+    private final String loginBody = """
             {
-                "email": "aidan@digitalsolutions.co.za",
+                "email": "aidan+%s@digitalsolutions.co.za",
                 "password": "correct-horse-battery"
             }
-            """;
+            """.formatted(id);
 
     private MvcResult registerAndLogin() throws Exception {
         mockMvc.perform(post("/api/auth/register").with(csrf())
-                .contentType(MediaType.APPLICATION_JSON).content(VALID_BODY));
+                .contentType(MediaType.APPLICATION_JSON).content(validBody));
 
         return mockMvc.perform(post("/api/auth/login").with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(LOGIN_BODY))
+                        .contentType(MediaType.APPLICATION_JSON).content(loginBody))
                 .andReturn();
     }
 
     @Test
     void register() throws Exception {
         mockMvc.perform(post("/api/auth/register").with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
+                        .contentType(MediaType.APPLICATION_JSON).content(validBody))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.email").value("aidan@digitalsolutions.co.za"))
+                .andExpect(jsonPath("$.email").value("aidan+" + id + "@digitalsolutions.co.za"))
                 .andExpect(jsonPath("$.passwordHash").doesNotExist());
     }
 
@@ -64,7 +71,7 @@ class AuthControllerTest {
     @Test
     void register_withoutCsrf() throws Exception {
         mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
+                        .contentType(MediaType.APPLICATION_JSON).content(validBody))
                 .andExpect(status().isForbidden());
     }
 

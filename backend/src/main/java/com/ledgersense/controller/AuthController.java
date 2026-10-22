@@ -1,6 +1,7 @@
 package com.ledgersense.controller;
 
 import com.ledgersense.domain.AppUser;
+import com.ledgersense.domain.AuditAction;
 import com.ledgersense.domain.Organization;
 import com.ledgersense.dto.LoginRequest;
 import com.ledgersense.dto.MeResponse;
@@ -10,6 +11,7 @@ import com.ledgersense.exception.InvalidCredentialsException;
 import com.ledgersense.security.AuthCookies;
 import com.ledgersense.security.JwtService;
 import com.ledgersense.service.impl.IAppUserService;
+import com.ledgersense.service.impl.IAuditService;
 import com.ledgersense.service.impl.IAuthService;
 import com.ledgersense.service.impl.ILoginAttemptService;
 import com.ledgersense.service.impl.IOrganizationService;
@@ -38,22 +40,25 @@ public class AuthController {
     private final IAppUserService appUserService;
     private final IOrganizationService organizationService;
     private final ILoginAttemptService loginAttemptService;
+    private final IAuditService auditService;
 
     public AuthController(IAuthService authService, JwtService jwtService,
                           IRefreshTokenService refreshTokenService,
                           IAppUserService appUserService, IOrganizationService organizationService,
-                          ILoginAttemptService loginAttemptService) {
+                          ILoginAttemptService loginAttemptService, IAuditService auditService) {
         this.authService = authService;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
         this.appUserService = appUserService;
         this.organizationService = organizationService;
         this.loginAttemptService = loginAttemptService;
+        this.auditService = auditService;
     }
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
         AppUser user = authService.register(request.businessName(), request.email(), request.password());
+        auditService.record(AuditAction.REGISTER, user.getOrgId(), user.getId(), null, null); // NEW
         return ResponseEntity.status(HttpStatus.CREATED).body(RegisterResponse.from(user));
     }
 
@@ -68,9 +73,11 @@ public class AuthController {
             user = authService.login(request.email(), request.password());
         } catch (InvalidCredentialsException ex) {
             loginAttemptService.recordFailure(key);   // NEW: add a tally
+            auditService.record(AuditAction.LOGIN_FAILED, null, null, null, null); // NEW: no org/user, we don't reveal who
             throw ex;                                 // still a 401 for this attempt
         }
         loginAttemptService.recordSuccess(key);      // NEW: rub the tally out
+        auditService.record(AuditAction.LOGIN_SUCCESS, user.getOrgId(), user.getId(), null, null); // NEW
 
         // unchanged from here: issue refresh token, return withAuthCookies(...)
         String refreshToken = refreshTokenService.issue(user.getId());
