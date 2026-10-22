@@ -1,10 +1,12 @@
 package com.ledgersense.controller;
 
+import com.ledgersense.domain.AuditAction;
 import com.ledgersense.domain.BankAccount;
 import com.ledgersense.dto.BankAccountResponse;
 import com.ledgersense.dto.CreateBankAccountRequest;
 import com.ledgersense.dto.RenameBankAccountRequest;
 import com.ledgersense.security.CurrentUser;
+import com.ledgersense.service.impl.IAuditService;
 import com.ledgersense.service.impl.IBankAccountService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -22,15 +24,19 @@ import java.util.UUID;
 public class BankAccountController {
 
     private final IBankAccountService bankAccountService;
+    private final IAuditService auditService;
 
-    public BankAccountController(IBankAccountService bankAccountService){
+    public BankAccountController(IBankAccountService bankAccountService, IAuditService auditService){
         this.bankAccountService = bankAccountService;
+        this.auditService = auditService;
     }
     @PostMapping
     public ResponseEntity<BankAccountResponse> create(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CreateBankAccountRequest request) {
         CurrentUser current = CurrentUser.from(jwt);
         BankAccount account = bankAccountService.create(current.orgId(), request.name(),
                 request.bank(), request.accountLast4(), request.currency());
+        auditService.record(AuditAction.BANK_ACCOUNT_CREATED, current.orgId(), current.id(),
+                account.getId(), account.getName()); // NEW
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}").buildAndExpand(account.getId()).toUri();
@@ -57,6 +63,9 @@ public class BankAccountController {
     public BankAccountResponse rename(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
                                       @Valid @RequestBody RenameBankAccountRequest request) {
         CurrentUser current = CurrentUser.from(jwt);
-        return BankAccountResponse.from(bankAccountService.rename(id, current.orgId(), request.name()));
+        BankAccount account = bankAccountService.rename(id, current.orgId(), request.name()); // CHANGED
+        auditService.record(AuditAction.BANK_ACCOUNT_RENAMED, current.orgId(), current.id(),
+                id, account.getName()); // NEW
+        return BankAccountResponse.from(account);
     }
 }
