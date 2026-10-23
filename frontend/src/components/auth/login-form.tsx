@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { LoaderCircle } from "lucide-react";
 import { api, ApiError, refreshSession } from "@/lib/api";
 import { Field } from "./field";
+import { FormError } from "./form-error";
+import { SubmitButton } from "./submit-button";
 
 export function LoginForm({ next }: { next: string }) {
   const router = useRouter();
@@ -15,11 +18,9 @@ export function LoginForm({ next }: { next: string }) {
   const [checking, setChecking] = useState(true);
   const triedRefresh = useRef(false);
 
-  // NEW: the access cookie expired but the 7-day refresh cookie may still be valid.
-  // Try a silent refresh first so returning users skip the form.
+  // Silent refresh: skip the form if the 7-day refresh cookie is still valid
   useEffect(() => {
-    // WHY the ref guard: React dev mode runs effects TWICE. Two refreshes would reuse
-    // the same refresh token, and our reuse detection would log the user out everywhere.
+    // WHY the ref guard: React dev mode runs effects twice. Two refreshes = token reuse = forced logout.
     if (triedRefresh.current) return;
     triedRefresh.current = true;
 
@@ -29,7 +30,7 @@ export function LoginForm({ next }: { next: string }) {
   }, [next, router]);
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault(); // stop the browser doing a full-page form post
+    e.preventDefault();
     setError(null);
     setSubmitting(true);
     try {
@@ -42,40 +43,34 @@ export function LoginForm({ next }: { next: string }) {
   }
 
   if (checking) {
-    return <p className="text-center text-sm text-fg/60">Checking your session…</p>;
+    return (
+      <p className="flex items-center gap-2 text-sm text-fg-muted">
+        <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+        Checking your session…
+      </p>
+    );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-      <h1 className="text-xl font-semibold text-fg">Log in</h1>
-
+    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
       <Field id="email" label="Email" type="email" autoComplete="email" value={email} onChange={setEmail} />
       <Field
         id="password"
         label="Password"
-        type="password"
         autoComplete="current-password"
         value={password}
         onChange={setPassword}
+        revealable
       />
 
-      {/* role="alert" = screen readers announce the error immediately */}
-      {error && (
-        <p role="alert" className="text-sm text-critical">
-          {error}
-        </p>
-      )}
+      <FormError message={error} />
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-canvas disabled:opacity-60"
-      >
-        {submitting ? "Logging in…" : "Log in"}
-      </button>
+      <SubmitButton busy={submitting} busyText="Logging in…">
+        Log in
+      </SubmitButton>
 
-      <p className="text-center text-sm text-fg/70">
-        New here?{" "}
+      <p className="text-center text-sm text-fg-muted">
+        New to LedgerSense?{" "}
         <Link href="/register" className="font-medium text-primary underline-offset-4 hover:underline">
           Create an account
         </Link>
