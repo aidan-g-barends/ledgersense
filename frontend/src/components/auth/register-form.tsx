@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { Field } from "./field";
+import { FormError } from "./form-error";
+import { SubmitButton } from "./submit-button";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -18,7 +20,7 @@ export function RegisterForm() {
     e.preventDefault();
     setError(null);
 
-    // WHY check here too: instant feedback. The backend still enforces it (never trust the client).
+    // Instant feedback. The backend still enforces this (never trust the client).
     if (password.length < 12) {
       setError("Password must be at least 12 characters.");
       return;
@@ -27,7 +29,6 @@ export function RegisterForm() {
     setSubmitting(true);
     try {
       await api("/auth/register", { method: "POST", body: { businessName, email, password } });
-      // Register doesn't log you in, so log in straight after with the same details
       await api("/auth/login", { method: "POST", body: { email, password } });
       router.replace("/");
     } catch (err) {
@@ -37,9 +38,7 @@ export function RegisterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-      <h1 className="text-xl font-semibold text-fg">Create your account</h1>
-
+    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
       <Field
         id="businessName"
         label="Business name"
@@ -47,32 +46,24 @@ export function RegisterForm() {
         value={businessName}
         onChange={setBusinessName}
       />
-      <Field id="email" label="Email" type="email" autoComplete="email" value={email} onChange={setEmail} />
+      <Field id="email" label="Work email" type="email" autoComplete="email" value={email} onChange={setEmail} />
       <Field
         id="password"
         label="Password"
-        type="password"
         autoComplete="new-password"
         value={password}
         onChange={setPassword}
         hint="At least 12 characters. A short sentence works well."
+        revealable
       />
 
-      {error && (
-        <p role="alert" className="text-sm text-critical">
-          {error}
-        </p>
-      )}
+      <FormError message={error} />
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-canvas disabled:opacity-60"
-      >
-        {submitting ? "Creating account…" : "Create account"}
-      </button>
+      <SubmitButton busy={submitting} busyText="Creating your account…">
+        Create account
+      </SubmitButton>
 
-      <p className="text-center text-sm text-fg/70">
+      <p className="text-center text-sm text-fg-muted">
         Already have an account?{" "}
         <Link href="/login" className="font-medium text-primary underline-offset-4 hover:underline">
           Log in
