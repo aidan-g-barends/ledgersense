@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FileUp } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { LogoutButton } from "@/components/auth/logout-button";
 import { MobileNav } from "./mobile-nav";
 
 export function AppHeader() {
@@ -18,6 +19,7 @@ export function AppHeader() {
           Import CSV
         </Link>
         <ThemeToggle />
+        <LogoutButton />
       </div>
     </header>
   );
