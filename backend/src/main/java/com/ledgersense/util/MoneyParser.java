@@ -12,10 +12,11 @@ public final class MoneyParser{
             return null;
         }
 
-        String s = raw.strip()
-                .replace("\u00A0", "")
-                .replace("","")
-                .replace("\u2212", "-")
+        // CHANGED: remove EVERY kind of space with one regex, not a typed " ".
+        // \s = normal whitespace, \p{Zs} = all Unicode spaces (no-break, narrow no-break, thin...).
+        // WHY: SA exports often use invisible "special" spaces as thousands separators.
+        String s = raw.replaceAll("[\\s\\p{Zs}]", "")
+                .replace("\u2212", "-")  // real minus sign \u2192 normal hyphen
                 .toUpperCase(Locale.ROOT);
 
         if(s.isEmpty()){
