@@ -1,4 +1,4 @@
-git spring:
+spring:
   application:
     name: ledgersense-api
 
