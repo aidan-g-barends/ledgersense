@@ -1,4 +1,4 @@
-spring:
+git spring:
   application:
     name: ledgersense-api
 
@@ -16,6 +16,11 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+
+  servlet:
+    multipart:
+      max-file-size: 2MB      # NEW: one bank statement CSV is tiny; 2MB = ~20 000 rows
+      max-request-size: 3MB   # file + form fields
 
 management:
   endpoints:
