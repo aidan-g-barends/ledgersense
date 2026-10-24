@@ -113,6 +113,14 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- NEW: battle-tested CSV reader. Handles quotes, commas inside quotes, line endings. -->
+		<!-- WHY not split(","): "WOOLWORTHS, CPT" inside quotes would break into two columns. -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-csv</artifactId>
+			<version>1.14.1</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
