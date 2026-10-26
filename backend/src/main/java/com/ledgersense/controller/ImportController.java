@@ -51,7 +51,7 @@ public class ImportController {
         ImportResult result = importService.commit(
                 current.orgId(), bankAccountId, file, mapping.isProvided() ? mapping.toMapping() : null);
 
-        auditService.record(AuditAction.IMPORT_COMPLETED, current.orgId(), current.userId(), result.batchId(),
+        auditService.record(AuditAction.IMPORT_COMPLETED, current.orgId(), current.id(), result.batchId(),
                 result.fileName() + ": " + result.imported() + " imported, " + result.duplicates() + " duplicates");
 
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
