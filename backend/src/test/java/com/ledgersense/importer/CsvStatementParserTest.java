@@ -1,10 +1,14 @@
 package com.ledgersense.importer;
 
+import com.ledgersense.domain.Bank;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -67,5 +71,21 @@ class CsvStatementParserTest {
         assertEquals(2, result.rows().size());   // the good rows still came through
         assertEquals(1, result.errors().size()); // the bad one was reported
         assertEquals(3, result.errors().get(0).rowNumber());
+    }
+
+    // NEW: reads the committed fixture file from src/test/resources/fixtures.
+    // getResourceAsStream works the same on your PC and in GitHub Actions (no C:\ paths).
+    @Test
+    void parse_absaFixtureFile() throws IOException {
+        InputStream stream = getClass().getResourceAsStream("/fixtures/absa-statement-sample.csv");
+        ParseResult result = parser.parse(
+                new InputStreamReader(stream, StandardCharsets.UTF_8), BankCsvPresets.forBank(Bank.ABSA));
+
+        assertEquals(12, result.rows().size());
+        assertEquals(0, result.errors().size());
+        assertEquals(LocalDate.of(2026, 9, 26), result.rows().get(0).postedOn());          // "Sept" handled
+        assertEquals("Fresh Mart Seaside ****1234", result.rows().get(1).description());  // card masked
+        assertEquals(new BigDecimal("10154.40"), result.rows().get(1).balance());          // padded balance
+        assertEquals("MUNICIPAL FINE - 1234567890", result.rows().get(7).description());  // short ref kept
     }
 }
