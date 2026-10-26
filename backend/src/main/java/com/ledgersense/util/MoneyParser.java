@@ -3,23 +3,23 @@ package com.ledgersense.util;
 import java.math.BigDecimal;
 import java.util.Locale;
 
-public final class MoneyParser{
+// Turns the many ways banks write money into an exact BigDecimal.
+// Returns null if it can't be read (your factory style), never guesses.
+public final class MoneyParser {
 
-    private MoneyParser(){}
+    private MoneyParser() {
+    }
 
-    public static BigDecimal parse(String raw){
-        if(raw == null){
+    public static BigDecimal parse(String raw) {
+        if (raw == null) {
             return null;
         }
-
         // CHANGED: remove EVERY kind of space with one regex, not a typed " ".
         // \s = normal whitespace, \p{Zs} = all Unicode spaces (no-break, narrow no-break, thin...).
-        // WHY: SA exports often use invisible "special" spaces as thousands separators.
         String s = raw.replaceAll("[\\s\\p{Zs}]", "")
-                .replace("\u2212", "-")  // real minus sign \u2192 normal hyphen
+                .replace("\u2212", "-")  // real minus sign → normal hyphen
                 .toUpperCase(Locale.ROOT);
-
-        if(s.isEmpty()){
+        if (s.isEmpty()) {
             return null;
         }
 
@@ -48,9 +48,8 @@ public final class MoneyParser{
             s = s.substring(1);
         }
 
-        // WHY this block: "1,234.56" (English) vs "1 234,56" (South African). Rule:
-        // if both appear, the LAST one is the decimal point. If only a comma appears,
-        // 1 or 2 digits after it means decimal ("12,50"); 3 means thousands ("1,234").
+        // "1,234.56" (English) vs "1 234,56" (South African). If both appear, the LAST one is
+        // the decimal point. Only a comma: 1-2 digits after = decimal, 3 = thousands.
         int lastComma = s.lastIndexOf(',');
         int lastDot = s.lastIndexOf('.');
         if (lastComma >= 0 && lastDot >= 0) {
@@ -63,13 +62,17 @@ public final class MoneyParser{
             s = (onlyOneComma && digitsAfter <= 2) ? s.replace(',', '.') : s.replace(",", "");
         }
 
-        // Final gate: digits, optionally a dot and 1-2 decimals. Anything else = unreadable.
-        // WHY max 2 decimals: a third decimal is a fraction of a cent, which means a parsing bug.
-        if (!s.matches("\\d+(\\.\\d{1,2})?")) {
+        // CHANGED: allow any number of decimals here, then check the real value below
+        if (!s.matches("\\d+(\\.\\d+)?")) {
             return null;
         }
-        BigDecimal value = new BigDecimal(s).setScale(2);
+        // NEW: "7691.330000" is fine (extra digits are zeros), "12.345" is not (fraction of a cent).
+        // stripTrailingZeros() turns 7691.330000 into 7691.33, then we check it fits in 2 decimals.
+        BigDecimal value = new BigDecimal(s).stripTrailingZeros();
+        if (value.scale() > 2) {
+            return null;
+        }
+        value = value.setScale(2);
         return negative ? value.negate() : value;
     }
 }
-

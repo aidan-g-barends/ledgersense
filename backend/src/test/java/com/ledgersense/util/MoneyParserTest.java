@@ -35,4 +35,10 @@ class MoneyParserTest {
         assertNull(MoneyParser.parse("12.345")); // fraction of a cent
         assertNull(MoneyParser.parse("   "));
     }
+
+    // NEW: some banks pad balances with zeros
+    @Test
+    void parse_trailingZeroDecimals() {
+        assertEquals(new BigDecimal("7691.33"), MoneyParser.parse("7691.330000"));
+    }
 }
