@@ -29,16 +29,16 @@ class MoneyParserTest {
         assertEquals(new BigDecimal("-450.00"), MoneyParser.parse("450.00 DR"));
     }
 
+    // NEW: some banks pad balances with zeros
+    @Test
+    void parse_trailingZeroDecimals() {
+        assertEquals(new BigDecimal("7691.33"), MoneyParser.parse("7691.330000"));
+    }
+
     @Test
     void parse_unreadable() {
         assertNull(MoneyParser.parse("abc"));
         assertNull(MoneyParser.parse("12.345")); // fraction of a cent
         assertNull(MoneyParser.parse("   "));
-    }
-
-    // NEW: some banks pad balances with zeros
-    @Test
-    void parse_trailingZeroDecimals() {
-        assertEquals(new BigDecimal("7691.33"), MoneyParser.parse("7691.330000"));
     }
 }
