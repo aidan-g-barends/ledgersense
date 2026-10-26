@@ -12,13 +12,14 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-// NEW: turns CSV text into ParsedRows using a ColumnMapping.
+// Turns CSV text into ParsedRows using a ColumnMapping.
 // SECURITY: never log row contents. It's someone's private banking data.
 @Component
 public class CsvStatementParser {
@@ -43,10 +44,15 @@ public class CsvStatementParser {
                 .setTrim(true)
                 .get();
 
-        DateTimeFormatter dates = DateTimeFormatter.ofPattern(mapping.datePattern(), Locale.ROOT)
-                .withResolverStyle(ResolverStyle.STRICT); // rejects impossible dates like 30 Feb
+        // CHANGED: case-insensitive ("OCT" or "Oct"), English month names ("Sep", "Oct"),
+        // STRICT so impossible dates like 30 Feb are rejected instead of quietly "fixed"
+        DateTimeFormatter dates = new DateTimeFormatterBuilder()
+                .parseCaseInsensitive()
+                .appendPattern(mapping.datePattern())
+                .toFormatter(Locale.ENGLISH)
+                .withResolverStyle(ResolverStyle.STRICT);
 
-        // try-with-resources: the parser (and file) is closed even if something throws
+        // try-with-resources: the parser is closed even if something throws
         try (CSVParser parser = format.parse(reader)) {
             boolean firstRecord = true;
             for (CSVRecord record : parser) {
@@ -80,7 +86,8 @@ public class CsvStatementParser {
         String rawDate = record.get(mapping.dateColumn());
         LocalDate postedOn;
         try {
-            postedOn = LocalDate.parse(rawDate, dates);
+            // CHANGED: some banks write "Sept", Java's English abbreviation is "Sep"
+            postedOn = LocalDate.parse(rawDate.replaceAll("(?i)sept", "Sep"), dates);
         } catch (DateTimeParseException ex) {
             errors.add(new RowError(rowNumber, "Couldn't read the date '" + preview(rawDate) + "'"));
             return;
@@ -100,13 +107,13 @@ public class CsvStatementParser {
 
         BigDecimal balance = mapping.balanceColumn() == null
                 ? null
-                : MoneyParser.parse(record.get(mapping.balanceColumn())); // balance is optional, so null is fine
+                : MoneyParser.parse(record.get(mapping.balanceColumn())); // optional, so null is fine
 
-        rows.add(new ParsedRow(rowNumber, postedOn, description.strip(), amount, balance));
+        // CHANGED: mask card numbers BEFORE the row goes anywhere (preview, DB, logs)
+        rows.add(new ParsedRow(rowNumber, postedOn, DescriptionSanitizer.clean(description), amount, balance));
     }
 
-    // WHY two styles: some banks give one signed Amount column, others give
-    // separate Debit (money out) and Credit (money in) columns. We turn both into one signed number.
+    // Two styles: one signed Amount column, OR separate Debit (out) and Credit (in) columns.
     private BigDecimal readAmount(CSVRecord record, ColumnMapping mapping) {
         if (mapping.amountColumn() != null) {
             return MoneyParser.parse(record.get(mapping.amountColumn()));
@@ -121,8 +128,7 @@ public class CsvStatementParser {
         return moneyIn.subtract(moneyOut).setScale(2);
     }
 
-    // WHY: Excel on Windows often saves CSVs with an invisible "BOM" character at the very start.
-    // Left in, it would glue itself onto the first header and break column matching.
+    // Excel on Windows often saves CSVs with an invisible "BOM" character at the very start.
     private void skipByteOrderMark(BufferedReader reader) throws IOException {
         reader.mark(1);
         if (reader.read() != '\uFEFF') {
