@@ -10,6 +10,7 @@ import com.ledgersense.repository.BankTransactionRepository;
 import com.ledgersense.repository.ImportBatchRepository;
 import com.ledgersense.service.impl.IBankAccountService;
 import com.ledgersense.service.impl.ICategoryRuleService;
+import com.ledgersense.service.impl.IMerchantService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +37,10 @@ class ImportServiceTest {
     private ImportBatchRepository importBatchRepository;        // NEW
 
     @Mock
-    private BankTransactionRepository bankTransactionRepository; // NEW
+    private BankTransactionRepository bankTransactionRepository;
+
+    @Mock
+    private IMerchantService merchantService;
 
     private ImportService importService;
     private final UUID orgId = UUID.randomUUID();
@@ -45,9 +49,10 @@ class ImportServiceTest {
             0, 1, 2, null, null, null);
 
     @BeforeEach
+    @BeforeEach
     void setUp() {
         importService = new ImportService(new CsvStatementParser(), bankAccountService,
-                categoryRuleService, importBatchRepository, bankTransactionRepository); // CHANGED
+                categoryRuleService, merchantService, importBatchRepository, bankTransactionRepository); // CHANGED
     }
 
     private MockMultipartFile csv(String name, String content) {
