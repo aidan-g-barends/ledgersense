@@ -19,6 +19,8 @@ public class BankTransaction {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+
+
     @Column(name = "org_id", nullable = false, updatable = false)
     private UUID orgId;
 
@@ -31,6 +33,10 @@ public class BankTransaction {
     // The only thing that changes after import: which category it's in (nullable = uncategorised)
     @Column(name = "category_id")
     private UUID categoryId;
+
+    // NEW: which merchant this row belongs to (null if the description had no usable name)
+    @Column(name = "merchant_id")
+    private UUID merchantId;
 
     // WHY LocalDate not Instant: banks give a DATE ("2026-10-19"), not a moment in time
     @Column(name = "posted_on", nullable = false, updatable = false)
@@ -77,6 +83,11 @@ public class BankTransaction {
         this.categoryId = categoryId;
     }
 
+    // NEW
+    public void linkMerchant(UUID merchantId) {
+        this.merchantId = merchantId;
+    }
+
     public boolean isMoneyOut() {
         return amount.signum() < 0; // signum: -1, 0 or 1. Safer than comparing to BigDecimal.ZERO
     }
@@ -93,6 +104,7 @@ public class BankTransaction {
     public String getFingerprint() { return fingerprint; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+    public UUID getMerchantId() { return merchantId; }
 
     public static class Builder {
         private UUID orgId;
