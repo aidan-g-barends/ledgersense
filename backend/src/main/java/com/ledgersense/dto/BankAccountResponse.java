@@ -2,20 +2,23 @@ package com.ledgersense.dto;
 
 import com.ledgersense.domain.Bank;
 import com.ledgersense.domain.BankAccount;
+import com.ledgersense.importer.BankCsvPresets;
 
 import java.time.Instant;
 import java.util.UUID;
 
-// WHY no orgId in the response: the client already knows its own org. Don't send what isn't needed.
-public record BankAccountResponse(UUID id, String name, Bank bank, String accountLast4, String currency, Instant createdAt) {
+public record BankAccountResponse(UUID id, String name, Bank bank, String accountLast4,
+                                  String currency, Instant createdAt,
+                                  boolean hasCsvPreset) { // NEW: lets the wizard skip column mapping
 
-    public static BankAccountResponse from(BankAccount bankAccount) {
+    public static BankAccountResponse from(BankAccount account) {
         return new BankAccountResponse(
-                bankAccount.getId(),
-                bankAccount.getName(),
-                bankAccount.getBank(),
-                bankAccount.getAccountLast4(),
-                bankAccount.getCurrency(),
-                bankAccount.getCreatedAt());
+                account.getId(),
+                account.getName(),
+                account.getBank(),
+                account.getAccountLast4(),
+                account.getCurrency(),
+                account.getCreatedAt(),
+                BankCsvPresets.forBank(account.getBank()) != null); // NEW
     }
 }
