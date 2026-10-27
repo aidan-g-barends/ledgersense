@@ -48,7 +48,7 @@ class ImportServiceTest {
     private final ColumnMapping mapping = new ColumnMapping(',', 0, true, "uuuu/MM/dd",
             0, 1, 2, null, null, null);
 
-    @BeforeEach
+
     @BeforeEach
     void setUp() {
         importService = new ImportService(new CsvStatementParser(), bankAccountService,
