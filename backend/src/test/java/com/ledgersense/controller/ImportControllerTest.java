@@ -108,7 +108,8 @@ class ImportControllerTest {
                 .andExpect(jsonPath("$.duplicates").value(12));
 
         mockMvc.perform(get("/api/transactions").cookie(token))
-                .andExpect(jsonPath("$.totalElements").value(12));
+                .andExpect(jsonPath("$.totalElements").value(12))
+                .andExpect(jsonPath("$.content[0].merchantId").isNotEmpty()); // NEW: merchants linked
     }
 
     // NEW: a rule created BEFORE import categorises matching rows DURING import
@@ -135,5 +136,21 @@ class ImportControllerTest {
 
         mockMvc.perform(get("/api/transactions").param("q", "fresh mart").cookie(token))
                 .andExpect(jsonPath("$.content[0].categoryId").value(groceriesId));
+    }
+
+    // NEW: history shows the completed batch with its stats
+    @Test
+    void history() throws Exception {
+        Cookie token = TestAuth.loginAs(mockMvc, "Import Co", "history@import.co.za");
+        String accountId = createAccount(token, "ABSA", "3005");
+
+        mockMvc.perform(multipart("/api/imports").file(absaFixture()).with(csrf()).cookie(token)
+                        .param("bankAccountId", accountId))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/imports").cookie(token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].status").value("COMPLETED"))
+                .andExpect(jsonPath("$[0].rowsImported").value(12));
     }
 }
