@@ -2,6 +2,7 @@ package com.ledgersense.controller;
 
 import com.ledgersense.domain.AuditAction;
 import com.ledgersense.dto.ColumnMappingRequest;
+import com.ledgersense.dto.ImportBatchResponse;
 import com.ledgersense.dto.ImportPreviewResponse;
 import com.ledgersense.importer.ImportResult;
 import com.ledgersense.security.CurrentUser;
@@ -16,6 +17,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -55,5 +57,14 @@ public class ImportController {
                 result.fileName() + ": " + result.imported() + " imported, " + result.duplicates() + " duplicates");
 
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
+    }
+
+    // NEW: import history, newest first
+    @GetMapping
+    public List<ImportBatchResponse> history(@AuthenticationPrincipal Jwt jwt) {
+        CurrentUser current = CurrentUser.from(jwt);
+        return importService.history(current.orgId()).stream()
+                .map(ImportBatchResponse::from)
+                .toList();
     }
 }
