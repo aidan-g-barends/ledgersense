@@ -1,16 +1,13 @@
-import { ReceiptText } from "lucide-react";
-import { EmptyState } from "@/components/ui/empty-state";
-import { PageHeader } from "@/components/ui/page-header";
+import { TransactionsView } from "@/components/transactions/transactions-view";
 
 export default function TransactionsPage() {
   return (
-    <>
-      <PageHeader title="Transactions" description="Every imported transaction, categorized." />
-      <EmptyState
-        icon={ReceiptText}
-        title="No transactions yet"
-        description="Transactions appear here after you import a bank statement."
-      />
-    </>
+    <div className="space-y-6">
+      <header>
+        <h1 className="text-2xl font-semibold tracking-tight text-fg">Transactions</h1>
+        <p className="mt-1 text-sm text-fg-muted">Every imported transaction, newest first.</p>
+      </header>
+      <TransactionsView />
+    </div>
   );
 }
