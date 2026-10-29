@@ -48,14 +48,17 @@ const NO_RETRY = ["/auth/login", "/auth/register", "/auth/refresh"];
 type Options = { method?: string; body?: unknown; retry?: boolean };
 
 export async function api<T>(path: string, { method = "GET", body, retry = true }: Options = {}): Promise<T> {
+  // CHANGED: FormData (file uploads) must NOT get a JSON content type.
+  // The browser sets "multipart/form-data; boundary=..." itself.
+  const isForm = body instanceof FormData;
   const headers: Record<string, string> = {};
-  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (body !== undefined && !isForm) headers["Content-Type"] = "application/json";
   if (method !== "GET") headers["X-XSRF-TOKEN"] = await csrfToken();
 
   const res = await fetch(`/api${path}`, {
     method,
     headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
   });
 
   // WHY: the access cookie only lives 15 min. On a 401 we try ONE silent refresh,
