@@ -1,4 +1,4 @@
-import { ImportWizard } from "@/components/imports/import-wizard";
+import { ImportsScreen } from "@/components/imports/imports-screen";
 
 export default function ImportsPage() {
   return (
@@ -9,7 +9,7 @@ export default function ImportsPage() {
           Upload a CSV from your bank. You&apos;ll see a preview before anything is saved.
         </p>
       </header>
-      <ImportWizard />
+      <ImportsScreen />
     </div>
   );
 }
