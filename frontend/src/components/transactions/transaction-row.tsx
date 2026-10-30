@@ -9,7 +9,7 @@ import type { TransactionRowProps } from "./transaction-row-types";
 type RecategoriseResponse = { merchantTransactionsUpdated: number };
 
 // CHANGED: the category is now a dropdown, with an "apply to merchant" offer after a change
-export function TransactionRow({ tx, categories, onChanged }: TransactionRowProps) {
+export function TransactionRow({ tx, categories, categoriesById, onChanged }: TransactionRowProps) {
   const [categoryId, setCategoryId] = useState<string | null>(tx.categoryId);
   const [serverCategoryId, setServerCategoryId] = useState<string | null>(tx.categoryId);
   const [busy, setBusy] = useState(false);
