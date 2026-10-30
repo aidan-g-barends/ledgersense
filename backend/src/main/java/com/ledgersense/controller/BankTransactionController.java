@@ -58,7 +58,7 @@ public class BankTransactionController {
         RecategoriseResult result = bankTransactionService.recategorise(
                 id, current.orgId(), request.categoryId(), request.rememberMerchant());
 
-        auditService.record(AuditAction.TRANSACTION_RECATEGORISED, current.orgId(), current.userId(), id,
+        auditService.record(AuditAction.TRANSACTION_RECATEGORISED, current.orgId(), current.id(), id,
                 request.rememberMerchant()
                         ? "Applied to merchant (" + result.merchantTransactionsUpdated() + " transactions)"
                         : null);

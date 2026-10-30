@@ -16,10 +16,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -105,5 +107,45 @@ class BankTransactionControllerTest {
         mockMvc.perform(get("/api/transactions").cookie(orgB))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    // NEW: change one coffee to Groceries + "remember", and BOTH identical coffees update
+    @Test
+    void recategorise_rememberMerchant() throws Exception {
+        Cookie token = TestAuth.loginAs(mockMvc, "Ledger Co", "remember@ledger.co.za");
+
+        String accountJson = mockMvc.perform(post("/api/bank-accounts").with(csrf()).cookie(token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Cheque","bank":"ABSA","accountLast4":"1004"}
+                                """))
+                .andReturn().getResponse().getContentAsString();
+        String accountId = JsonPath.read(accountJson, "$.id");
+
+        byte[] fixture = getClass().getResourceAsStream("/fixtures/absa-statement-sample.csv").readAllBytes();
+        mockMvc.perform(multipart("/api/imports")
+                        .file(new MockMultipartFile("file", "absa.csv", "text/csv", fixture))
+                        .with(csrf()).cookie(token)
+                        .param("bankAccountId", accountId))
+                .andExpect(status().isCreated());
+
+        String categories = mockMvc.perform(get("/api/categories").cookie(token))
+                .andReturn().getResponse().getContentAsString();
+        List<String> groceries = JsonPath.read(categories, "$[?(@.name == 'Groceries')].id");
+
+        String coffees = mockMvc.perform(get("/api/transactions").param("q", "corner coffee").cookie(token))
+                .andReturn().getResponse().getContentAsString();
+        String firstCoffeeId = JsonPath.read(coffees, "$.content[0].id");
+
+        mockMvc.perform(patch("/api/transactions/" + firstCoffeeId + "/category").with(csrf()).cookie(token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"categoryId":"%s","rememberMerchant":true}
+                                """.formatted(groceries.get(0))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.merchantTransactionsUpdated").value(2));
+
+        mockMvc.perform(get("/api/transactions").param("q", "corner coffee").cookie(token))
+                .andExpect(jsonPath("$.content[1].categoryId").value(groceries.get(0)));
     }
 }
