@@ -1,10 +1,11 @@
 package com.ledgersense.controller;
 
-import com.ledgersense.dto.BankTransactionResponse;
-import com.ledgersense.dto.PageResponse;
-import com.ledgersense.dto.TransactionFilter;
+import com.ledgersense.domain.AuditAction;
+import com.ledgersense.dto.*;
 import com.ledgersense.security.CurrentUser;
+import com.ledgersense.service.impl.IAuditService;
 import com.ledgersense.service.impl.IBankTransactionService;
+import com.ledgersense.service.impl.IBankTransactionService.RecategoriseResult;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -18,12 +19,13 @@ import java.util.UUID;
 public class BankTransactionController {
 
     private final IBankTransactionService bankTransactionService;
+    private final IAuditService auditService; // NEW
 
-    public BankTransactionController(IBankTransactionService bankTransactionService) {
+    public BankTransactionController(IBankTransactionService bankTransactionService, IAuditService auditService) {
         this.bankTransactionService = bankTransactionService;
+        this.auditService = auditService;
     }
 
-    // Example: GET /api/transactions?page=0&size=50&q=woolworths&from=2026-10-01
     @GetMapping
     public PageResponse<BankTransactionResponse> list(
             @AuthenticationPrincipal Jwt jwt,
@@ -46,5 +48,21 @@ public class BankTransactionController {
     public BankTransactionResponse read(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         CurrentUser current = CurrentUser.from(jwt);
         return BankTransactionResponse.from(bankTransactionService.read(id, current.orgId()));
+    }
+
+    // NEW
+    @PatchMapping("/{id}/category")
+    public RecategoriseResponse recategorise(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
+                                             @RequestBody RecategoriseRequest request) {
+        CurrentUser current = CurrentUser.from(jwt);
+        RecategoriseResult result = bankTransactionService.recategorise(
+                id, current.orgId(), request.categoryId(), request.rememberMerchant());
+
+        auditService.record(AuditAction.TRANSACTION_RECATEGORISED, current.orgId(), current.userId(), id,
+                request.rememberMerchant()
+                        ? "Applied to merchant (" + result.merchantTransactionsUpdated() + " transactions)"
+                        : null);
+
+        return RecategoriseResponse.from(result);
     }
 }
