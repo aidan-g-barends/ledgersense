@@ -65,6 +65,7 @@ export async function api<T>(path: string, { method = "GET", body, retry = true 
   // then repeat the original request. Only if that fails do we send them to login.
   if (res.status === 401 && retry && !NO_RETRY.includes(path)) {
     if (await refreshSession()) return api<T>(path, { method, body, retry: false });
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload on purpose: clears in-memory data from the old session
     window.location.href = "/login";
     throw new ApiError(401, "Your session has ended. Please log in again.");
   }

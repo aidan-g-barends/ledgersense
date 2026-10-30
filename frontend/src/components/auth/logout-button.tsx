@@ -13,6 +13,7 @@ export function LogoutButton() {
       await api("/auth/logout", { method: "POST" }); // revokes refresh token + clears cookies
     } finally {
       // WHY a full reload: wipes any data still held in memory from the old session
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload on purpose: clears in-memory data from the old session
       window.location.href = "/login";
     }
   }
