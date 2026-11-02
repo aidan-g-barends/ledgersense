@@ -3,12 +3,14 @@ import { FileUp } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { MobileNav } from "./mobile-nav";
+import { BusinessName } from "./business-name";
 
 export function AppHeader() {
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-canvas px-4 lg:px-6">
       <MobileNav />
       <span className="text-sm font-semibold tracking-tight lg:hidden">LedgerSense</span>
+      <BusinessName />
 
       <div className="ml-auto flex items-center gap-2">
         <Link
