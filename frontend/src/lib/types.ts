@@ -80,3 +80,9 @@ export type Page<T> = {
   totalElements: number;
   totalPages: number;
 };
+
+// NEW
+export type Organization = { id: string; name: string; baseCurrency: string; createdAt: string };
+
+// NEW
+export type CategoryRule = { id: string; keyword: string; categoryId: string };
