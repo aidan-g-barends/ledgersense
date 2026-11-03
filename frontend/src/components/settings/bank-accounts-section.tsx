@@ -6,10 +6,14 @@ import { api, ApiError } from "@/lib/api";
 import { BANK_LABELS, type Bank, type BankAccount } from "@/lib/types";
 import { FormError } from "@/components/auth/form-error";
 import { btnPrimary, btnSecondary, card, inputClass } from "@/lib/ui";
+import { InlineRename } from "./inline-rename"; // NEW
 
 const BANKS = Object.entries(BANK_LABELS) as [Bank, string][];
 
-// NEW: list accounts + add one (GET/POST /api/bank-accounts)
+function sortAccounts(list: BankAccount[]): BankAccount[] {
+  return [...list].sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export function BankAccountsSection() {
   const [accounts, setAccounts] = useState<BankAccount[] | null>(null);
   const [adding, setAdding] = useState(false);
@@ -42,8 +46,7 @@ export function BankAccountsSection() {
         method: "POST",
         body: { name, bank, accountLast4: last4 },
       });
-      // WHY no refetch: we already have the new row, so just add it to what's on screen
-      setAccounts((list) => [...(list ?? []), created].sort((a, b) => a.name.localeCompare(b.name)));
+      setAccounts((list) => sortAccounts([...(list ?? []), created]));
       setAdding(false);
       setName("");
       setLast4("");
@@ -52,6 +55,12 @@ export function BankAccountsSection() {
     } finally {
       setBusy(false);
     }
+  }
+
+  // NEW: passed to InlineRename (PATCH /api/bank-accounts/{id}/name)
+  async function rename(id: string, newName: string) {
+    const updated = await api<BankAccount>(`/bank-accounts/${id}/name`, { method: "PATCH", body: { name: newName } });
+    setAccounts((list) => sortAccounts((list ?? []).map((a) => (a.id === id ? updated : a))));
   }
 
   return (
@@ -78,12 +87,12 @@ export function BankAccountsSection() {
             <li key={a.id} className="flex flex-wrap items-center gap-3 px-3 py-2.5">
               <Landmark className="size-4 shrink-0 text-fg-faint" aria-hidden="true" />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-fg">{a.name}</p>
+                {/* CHANGED: the name is now renameable in place */}
+                <InlineRename value={a.name} label={a.name} maxLength={100} onSave={(newName) => rename(a.id, newName)} />
                 <p className="font-mono text-xs text-fg-muted">
                   {BANK_LABELS[a.bank]} ••{a.accountLast4}
                 </p>
               </div>
-              {/* WHY a badge: tells the user at a glance whether imports need column mapping */}
               {a.hasCsvPreset ? (
                 <span className="rounded border border-positive/30 bg-positive/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-positive">
                   CSV preset
