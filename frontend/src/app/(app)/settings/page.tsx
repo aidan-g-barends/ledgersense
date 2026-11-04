@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { BusinessSection } from "@/components/settings/business-section";
 import { BankAccountsSection } from "@/components/settings/bank-accounts-section";
 import { RulesSection } from "@/components/settings/rules-section";
+import { ActivitySection } from "@/components/settings/activity-section"; // NEW
 
 export default function SettingsPage() {
   return (
@@ -11,6 +12,7 @@ export default function SettingsPage() {
         <BusinessSection />
         <BankAccountsSection />
         <RulesSection />
+        <ActivitySection />
       </div>
     </>
   );
