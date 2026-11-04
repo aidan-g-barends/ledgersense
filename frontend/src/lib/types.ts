@@ -82,7 +82,28 @@ export type Page<T> = {
 };
 
 // NEW
-export type Organization = { id: string; name: string; baseCurrency: string; createdAt: string };
+export type Organization = {
+  id: string;
+  name: string;
+  baseCurrency: string;
+  createdAt: string 
+};
 
 // NEW
-export type CategoryRule = { id: string; keyword: string; categoryId: string };
+export type CategoryRule = {
+   id: string;
+   keyword: string;
+    categoryId: string 
+  };
+
+  // NEW: one row of the audit log (GET /api/audit-events)
+export type AuditEvent = {
+  id: string;
+  action: string;
+  userId: string | null;
+  targetId: string | null;
+  ipAddress: string | null;
+  detail: string | null;
+  createdAt: string;
+};
+
