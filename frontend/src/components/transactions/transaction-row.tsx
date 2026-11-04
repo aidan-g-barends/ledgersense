@@ -9,7 +9,7 @@ import type { TransactionRowProps } from "./transaction-row-types";
 type RecategoriseResponse = { merchantTransactionsUpdated: number };
 
 // CHANGED: the category is now a dropdown, with an "apply to merchant" offer after a change
-export function TransactionRow({ tx, categories, onChanged }: TransactionRowProps) {
+export function TransactionRow({ tx, categories, onChanged, onOpen }: TransactionRowProps) {
   const [categoryId, setCategoryId] = useState<string | null>(tx.categoryId);
   const [serverCategoryId, setServerCategoryId] = useState<string | null>(tx.categoryId);
   const [busy, setBusy] = useState(false);
@@ -62,8 +62,18 @@ export function TransactionRow({ tx, categories, onChanged }: TransactionRowProp
   return (
     <tr className="border-t border-line-subtle align-top transition-colors hover:bg-raised">
       <td className="whitespace-nowrap px-4 py-2.5 font-mono text-xs text-fg-muted">{formatDate(tx.postedOn)}</td>
-      <td className="px-4 py-2.5 text-sm text-fg">{tx.description}</td>
-      <td className="px-4 py-2.5">
+      {/* CHANGED: the description is a button that opens the drawer.
+          WHY a button, not an onClick on the <tr>: keyboard users can Tab to it and press Enter,
+          and clicking the category dropdown doesn't accidentally open the drawer. */}
+      <td className="px-4 py-2.5 text-sm">
+        <button
+          type="button"
+          onClick={() => onOpen(tx)}
+          className="text-left text-fg underline-offset-4 hover:text-primary hover:underline"
+        >
+          {tx.description}
+        </button>
+      </td>      <td className="px-4 py-2.5">
         <div className="flex items-center gap-2">
           <select
             aria-label={`Category for ${tx.description}`}

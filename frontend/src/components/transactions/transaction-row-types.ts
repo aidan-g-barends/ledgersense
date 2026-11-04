@@ -5,4 +5,5 @@ export type TransactionRowProps = {
   categories: Category[];
   categoriesById: Record<string, Category>;
   onChanged: () => void;
+  onOpen: (tx: Transaction) => void; // NEW: open the detail drawer
 };

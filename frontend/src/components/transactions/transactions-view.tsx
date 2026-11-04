@@ -8,6 +8,7 @@ import { BANK_LABELS, type BankAccount, type Category, type Page, type Transacti
 import { FormError } from "@/components/auth/form-error";
 import { btnPrimary, btnSecondary, card, inputClass, labelCaps } from "@/lib/ui";
 import { TransactionRow } from "./transaction-row";
+import { TransactionDrawer } from "./transaction-drawer"; 
 
 const PAGE_SIZE = 50;
 const NO_FILTERS = { q: "", bankAccountId: "", categoryId: "", from: "", to: "" };
@@ -23,6 +24,7 @@ export function TransactionsView() {
   const [page, setPage] = useState(0);
   const [reloadKey, setReloadKey] = useState(0);
   const [result, setResult] = useState<Result | null>(null);
+  const [selected, setSelected] = useState<Transaction | null>(null); // NEW: which row's drawer is open
 
   // Lookups for names in dropdowns and rows. Loaded once.
   useEffect(() => {
@@ -87,6 +89,12 @@ export function TransactionsView() {
   const categoriesById = useMemo(
     () => Object.fromEntries(categories.map((c) => [c.id, c])) as Record<string, Category>,
     [categories],
+  );
+
+  // NEW: account lookup by id, for the drawer
+  const accountsById = useMemo(
+    () => Object.fromEntries(accounts.map((a) => [a.id, a])) as Record<string, BankAccount>,
+    [accounts],
   );
 
   function updateFilter(key: keyof Filters, value: string) {
@@ -213,6 +221,7 @@ export function TransactionsView() {
                     categories={categories}
                     categoriesById={categoriesById}
                     onChanged={() => setReloadKey((k) => k + 1)}
+                    onOpen={setSelected} // NEW
                   />
                 ))}
               </tbody>
@@ -246,6 +255,14 @@ export function TransactionsView() {
           </div>
         </div>
       )}
+
+      {/* NEW: one drawer for the whole page; `selected` decides what it shows */}
+      <TransactionDrawer
+        tx={selected}
+        onClose={() => setSelected(null)}
+        accountsById={accountsById}
+        categoriesById={categoriesById}
+      />
     </div>
   );
 }
