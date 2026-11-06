@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMockTimeline } from "./timeline";
+import { buildMockTimeline } from "./mock/timeline";
 
 describe("buildMockTimeline", () => {
   it("returns one point per day, oldest first", () => {
