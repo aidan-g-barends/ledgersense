@@ -2,7 +2,7 @@
 
 import { Check, LoaderCircle, ShieldAlert } from "lucide-react";
 import type { AnomalyFlag, ReviewDecision } from "@/lib/types";
-import { formatDate, formatDateTime, formatMoney } from "@/lib/money";
+import { formatDate, formatDateTime, formatMoney, formatRelative } from "@/lib/money";
 import { btnSecondary, card, labelCaps } from "@/lib/ui";
 import { RULE_LABELS, SEVERITY_STYLES } from "./flag-styles";
 
@@ -24,7 +24,10 @@ export function FlagCard({ flag, busy, onReview }: Props) {
           {severity.label}
         </span>
         <span className={labelCaps}>{RULE_LABELS[flag.rule]}</span>
-        <span className="ml-auto font-mono text-xs text-fg-faint">{formatDate(tx.postedOn)}</span>
+        {/* Also shows when it was flagged. Hover for the exact time. */}
+        <span className="ml-auto font-mono text-xs text-fg-faint" title={`Flagged ${formatDateTime(flag.createdAt)}`}>
+          {formatDate(tx.postedOn)} · flagged {formatRelative(flag.createdAt)}
+        </span>
       </header>
 
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
