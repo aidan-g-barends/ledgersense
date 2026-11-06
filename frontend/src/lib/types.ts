@@ -128,3 +128,30 @@ export type AnomalyFlag = {
   createdAt: string;
   reviewedAt: string | null;
 };
+
+// ============================================================
+// NEW: INSIGHTS. API contract for the Overview page:
+//   GET /api/insights/summary  -> InsightsSummary
+// ============================================================
+export type MonthTotal = {
+  month: string;    // "2026-10"
+  moneyIn: number;  // positive
+  moneyOut: number; // positive (we flip the sign so charts are simple)
+};
+
+export type CategorySpend = {
+  categoryId: string | null; // null = uncategorised
+  name: string;
+  amount: number;            // positive, money out
+};
+
+export type InsightsSummary = {
+  month: string;                     // the latest month that has data
+  moneyIn: number;
+  moneyOut: number;
+  net: number;                       // moneyIn - moneyOut
+  moneyOutChangePct: number | null;  // vs the month before; null if there's no earlier month
+  transactionCount: number;
+  months: MonthTotal[];              // last 6 months, OLDEST first (left to right on the chart)
+  topCategories: CategorySpend[];    // max 6, biggest first
+};
