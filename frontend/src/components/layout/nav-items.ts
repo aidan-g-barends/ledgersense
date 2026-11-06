@@ -1,4 +1,5 @@
 import {
+  ChartLine,
   FileUp,
   LayoutDashboard,
   ReceiptText,
@@ -15,6 +16,7 @@ export type NavItem = {
 
 export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
+  { href: "/timeline", label: "Timeline", icon: ChartLine },
   { href: "/attention", label: "Attention Queue", icon: TriangleAlert },
   { href: "/transactions", label: "Transactions", icon: ReceiptText },
   { href: "/imports", label: "Imports", icon: FileUp },
