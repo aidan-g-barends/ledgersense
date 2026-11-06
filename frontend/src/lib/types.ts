@@ -81,22 +81,20 @@ export type Page<T> = {
   totalPages: number;
 };
 
-// NEW
 export type Organization = {
   id: string;
   name: string;
   baseCurrency: string;
-  createdAt: string 
+  createdAt: string;
 };
 
-// NEW
 export type CategoryRule = {
-   id: string;
-   keyword: string;
-    categoryId: string 
-  };
+  id: string;
+  keyword: string;
+  categoryId: string;
+};
 
-  // NEW: one row of the audit log (GET /api/audit-events)
+// One row of the audit log (GET /api/audit-events)
 export type AuditEvent = {
   id: string;
   action: string;
@@ -108,32 +106,10 @@ export type AuditEvent = {
 };
 
 // ============================================================
-// NEW: ANOMALY FLAGS. This is the API contract the backend will implement:
+// ANOMALY FLAGS. This is the API contract the backend will implement:
 //   GET   /api/flags?status=OPEN|LEGITIMATE|DISPUTED  -> AnomalyFlag[]
 //   PATCH /api/flags/{id}/review  { status: "LEGITIMATE" | "DISPUTED" }  -> AnomalyFlag
-// ============================================================
-export type FlagRule = "DUPLICATE_CHARGE" | "CATEGORY_OUTLIER" | "PRICE_INCREASE" | "NEW_MERCHANT";
-export type FlagSeverity = "CRITICAL" | "WARNING" | "INFO";
-export type FlagStatus = "OPEN" | "LEGITIMATE" | "DISPUTED";
-export type ReviewDecision = Exclude<FlagStatus, "OPEN">; // you can't review something back to OPEN
-
-export type AnomalyFlag = {
-  id: string;
-  rule: FlagRule;
-  severity: FlagSeverity;
-  status: FlagStatus;
-  title: string;                                 // "Possible duplicate charge"
-  explanation: string;                           // one plain sentence: WHY it was flagged
-  evidence: { label: string; value: string }[];  // the numbers behind it, in display order
-  transaction: Transaction;                      // the flagged transaction, embedded
-  createdAt: string;
-  reviewedAt: string | null;
-};
-
-// ============================================================
-// NEW: ANOMALY FLAGS. This is the API contract the backend will implement:
-//   GET   /api/flags?status=OPEN|LEGITIMATE|DISPUTED  -> AnomalyFlag[]
-//   PATCH /api/flags/{id}/review  { status: "LEGITIMATE" | "DISPUTED" }  -> AnomalyFlag
+//   GET   /api/flags/{id}/history  -> Transaction[]   // CHANGED: same merchant, newest first, max 12, includes the flagged one
 // ============================================================
 export type FlagRule = "DUPLICATE_CHARGE" | "CATEGORY_OUTLIER" | "PRICE_INCREASE" | "NEW_MERCHANT";
 export type FlagSeverity = "CRITICAL" | "WARNING" | "INFO";
