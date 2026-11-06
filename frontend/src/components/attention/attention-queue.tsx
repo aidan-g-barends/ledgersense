@@ -7,14 +7,15 @@ import type { AnomalyFlag, FlagStatus, ReviewDecision } from "@/lib/types";
 import { formatMoney } from "@/lib/money";
 import { FormError } from "@/components/auth/form-error";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Segmented } from "@/components/ui/segmented";
 import { card } from "@/lib/ui";
 import { FlagCard } from "./flag-card";
 import { SEVERITY_RANK } from "./flag-styles";
 
-const TABS: { status: FlagStatus; label: string }[] = [
-  { status: "OPEN", label: "Needs review" },
-  { status: "LEGITIMATE", label: "Fine" },
-  { status: "DISPUTED", label: "Disputed" },
+const TABS: { value: FlagStatus; label: string }[] = [
+  { value: "OPEN", label: "Needs review" },
+  { value: "LEGITIMATE", label: "Fine" },
+  { value: "DISPUTED", label: "Disputed" },
 ];
 
 type Result = { key: FlagStatus; flags?: AnomalyFlag[]; error?: string };
@@ -83,25 +84,15 @@ export function AttentionQueue() {
         </p>
       )}
 
-      {/* Tabs. aria-pressed tells screen readers which one is active. */}
-      <div className="inline-flex rounded border border-line bg-sunken p-0.5" role="group" aria-label="Flag status">
-        {TABS.map((tab) => (
-          <button
-            key={tab.status}
-            type="button"
-            aria-pressed={status === tab.status}
-            onClick={() => {
-              setStatus(tab.status);
-              setNotice(null);
-            }}
-            className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
-              status === tab.status ? "bg-surface text-fg shadow-sm" : "text-fg-muted hover:text-fg"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        options={TABS}
+        value={status}
+        label="Flag status"
+        onChange={(next) => {
+          setStatus(next);
+          setNotice(null);
+        }}
+      />
 
       {status === "OPEN" && !loading && flags.length > 0 && (
         <div className={`${card} flex flex-wrap items-baseline gap-x-6 gap-y-1 p-4`}>
