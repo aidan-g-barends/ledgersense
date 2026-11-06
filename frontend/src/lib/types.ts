@@ -129,3 +129,26 @@ export type AnomalyFlag = {
   createdAt: string;
   reviewedAt: string | null;
 };
+
+// ============================================================
+// NEW: ANOMALY FLAGS. This is the API contract the backend will implement:
+//   GET   /api/flags?status=OPEN|LEGITIMATE|DISPUTED  -> AnomalyFlag[]
+//   PATCH /api/flags/{id}/review  { status: "LEGITIMATE" | "DISPUTED" }  -> AnomalyFlag
+// ============================================================
+export type FlagRule = "DUPLICATE_CHARGE" | "CATEGORY_OUTLIER" | "PRICE_INCREASE" | "NEW_MERCHANT";
+export type FlagSeverity = "CRITICAL" | "WARNING" | "INFO";
+export type FlagStatus = "OPEN" | "LEGITIMATE" | "DISPUTED";
+export type ReviewDecision = Exclude<FlagStatus, "OPEN">; // you can't review something back to OPEN
+
+export type AnomalyFlag = {
+  id: string;
+  rule: FlagRule;
+  severity: FlagSeverity;
+  status: FlagStatus;
+  title: string;                                 // "Possible duplicate charge"
+  explanation: string;                           // one plain sentence: WHY it was flagged
+  evidence: { label: string; value: string }[];  // the numbers behind it, in display order
+  transaction: Transaction;                      // the flagged transaction, embedded
+  createdAt: string;
+  reviewedAt: string | null;
+};
