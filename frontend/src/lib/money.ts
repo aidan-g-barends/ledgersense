@@ -30,3 +30,24 @@ export function formatMonth(month: string, style: "short" | "long" = "short"): s
   // WHY UTC on both sides: "2026-10-01" in local time can slip to 30 Sep in some timezones
   return new Intl.DateTimeFormat("en-ZA", options).format(new Date(`${month}-01T00:00:00Z`));
 }
+
+// NEW: "2 days ago", "yesterday", "last week". `now` is a parameter so tests can fix the time.
+const relative = new Intl.RelativeTimeFormat("en-ZA", { numeric: "auto" }); // "auto" = "yesterday", not "1 day ago"
+
+const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ["year", 31_536_000],
+  ["month", 2_592_000],
+  ["week", 604_800],
+  ["day", 86_400],
+  ["hour", 3_600],
+  ["minute", 60],
+];
+
+export function formatRelative(iso: string, now: Date = new Date()): string {
+  const seconds = Math.round((new Date(iso).getTime() - now.getTime()) / 1000); // negative = in the past
+  // Biggest unit first: 9 days is "last week", not "9 days ago"
+  for (const [unit, size] of UNITS) {
+    if (Math.abs(seconds) >= size) return relative.format(Math.round(seconds / size), unit);
+  }
+  return "just now";
+}
