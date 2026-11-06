@@ -130,3 +130,15 @@ export type AnomalyFlag = {
   reviewedAt: string | null;
 };
 
+// ============================================================
+// NEW: TIMELINE. API contract:
+//   GET /api/insights/timeline?days=30|90|180  -> TimelinePoint[]  (one per day, OLDEST first)
+// ============================================================
+export type TimelinePoint = {
+  date: string;       // "2026-10-05"
+  moneyIn: number;    // positive
+  moneyOut: number;   // positive
+  runningNet: number; // total in minus total out from the first day up to this one
+  flagCount: number;  // flags on transactions posted this day
+};
+
