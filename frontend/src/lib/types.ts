@@ -81,22 +81,20 @@ export type Page<T> = {
   totalPages: number;
 };
 
-// NEW
 export type Organization = {
   id: string;
   name: string;
   baseCurrency: string;
-  createdAt: string 
+  createdAt: string;
 };
 
-// NEW
 export type CategoryRule = {
-   id: string;
-   keyword: string;
-    categoryId: string 
-  };
+  id: string;
+  keyword: string;
+  categoryId: string;
+};
 
-  // NEW: one row of the audit log (GET /api/audit-events)
+// One row of the audit log (GET /api/audit-events)
 export type AuditEvent = {
   id: string;
   action: string;
@@ -108,9 +106,10 @@ export type AuditEvent = {
 };
 
 // ============================================================
-// NEW: ANOMALY FLAGS. This is the API contract the backend will implement:
+// ANOMALY FLAGS. This is the API contract the backend will implement:
 //   GET   /api/flags?status=OPEN|LEGITIMATE|DISPUTED  -> AnomalyFlag[]
 //   PATCH /api/flags/{id}/review  { status: "LEGITIMATE" | "DISPUTED" }  -> AnomalyFlag
+//   GET   /api/flags/{id}/history  -> Transaction[]   // CHANGED: same merchant, newest first, max 12, includes the flagged one
 // ============================================================
 export type FlagRule = "DUPLICATE_CHARGE" | "CATEGORY_OUTLIER" | "PRICE_INCREASE" | "NEW_MERCHANT";
 export type FlagSeverity = "CRITICAL" | "WARNING" | "INFO";
@@ -131,7 +130,34 @@ export type AnomalyFlag = {
 };
 
 // ============================================================
-// NEW: TIMELINE. API contract:
+// INSIGHTS. API contract for the Overview page:
+//   GET /api/insights/summary  -> InsightsSummary
+// ============================================================
+export type MonthTotal = {
+  month: string;    // "2026-10"
+  moneyIn: number;  // positive
+  moneyOut: number; // positive (we flip the sign so charts are simple)
+};
+
+export type CategorySpend = {
+  categoryId: string | null; // null = uncategorised
+  name: string;
+  amount: number;            // positive, money out
+};
+
+export type InsightsSummary = {
+  month: string;                     // the latest month that has data
+  moneyIn: number;
+  moneyOut: number;
+  net: number;                       // moneyIn - moneyOut
+  moneyOutChangePct: number | null;  // vs the month before; null if there's no earlier month
+  transactionCount: number;
+  months: MonthTotal[];              // last 6 months, OLDEST first (left to right on the chart)
+  topCategories: CategorySpend[];    // max 6, biggest first
+};
+
+// ============================================================
+// TIMELINE. API contract:
 //   GET /api/insights/timeline?days=30|90|180  -> TimelinePoint[]  (one per day, OLDEST first)
 // ============================================================
 export type TimelinePoint = {
@@ -141,4 +167,3 @@ export type TimelinePoint = {
   runningNet: number; // total in minus total out from the first day up to this one
   flagCount: number;  // flags on transactions posted this day
 };
-
