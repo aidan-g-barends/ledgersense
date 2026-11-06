@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { FileUp } from "lucide-react";
-import { getInsightsSummary, USE_MOCK } from "@/lib/insights";
+import { getInsightsSummary, USE_MOCK } from "@/lib/mock/insights";
 import type { InsightsSummary } from "@/lib/types";
 import { formatMoney, formatMonth } from "@/lib/money";
 import { btnPrimary } from "@/lib/ui";
