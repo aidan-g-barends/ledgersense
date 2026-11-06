@@ -22,3 +22,11 @@ export function formatDateTime(isoInstant: string): string {
     minute: "2-digit",
   });
 }
+
+// NEW: "2026-10" -> "Oct", or "October 2026" with "long"
+export function formatMonth(month: string, style: "short" | "long" = "short"): string {
+  const options: Intl.DateTimeFormatOptions =
+    style === "short" ? { month: "short", timeZone: "UTC" } : { month: "long", year: "numeric", timeZone: "UTC" };
+  // WHY UTC on both sides: "2026-10-01" in local time can slip to 30 Sep in some timezones
+  return new Intl.DateTimeFormat("en-ZA", options).format(new Date(`${month}-01T00:00:00Z`));
+}
