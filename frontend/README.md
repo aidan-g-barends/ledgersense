@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LedgerSense frontend
 
-## Getting Started
+Next.js 16 + TypeScript + Tailwind v4 dashboard for LedgerSense: import South African bank CSVs, auto-categorise spending, and review flagged anomalies.
 
-First, run the development server:
+## Run it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000 (the backend must be running, see ../dev.sh)
+npm run lint
+npm test         # Vitest unit tests
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`/api/*` is proxied to the Spring Boot backend (see `next.config.ts`), so the browser only ever talks to one origin.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+  app/(auth)/        login, register
+  app/(app)/         Overview, Timeline, Attention Queue, Transactions, Imports, Settings
+  components/        UI grouped by feature (attention, overview, timeline, imports, ...)
+  lib/api.ts         fetch wrapper: CSRF header, silent refresh on 401
+  lib/flags.ts       flags client      (USE_MOCK switch)
+  lib/insights.ts    insights client   (USE_MOCK switch)
+  lib/mock/          sample data used while a backend endpoint is still being built
+```
 
-## Learn More
+## Contract-first
 
-To learn more about Next.js, take a look at the following resources:
+The API shapes live in `src/lib/types.ts`. New screens are built against mock data in exactly that shape, then the backend is built to match. Going live is one line: set `USE_MOCK = false` in the client file and delete its mock.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Security notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Auth uses cookies plus a CSRF token (`XSRF-TOKEN` cookie, `X-XSRF-TOKEN` header). No tokens in `localStorage`.
+- Route guarding runs in `src/proxy.ts`.
+- CSV exports guard against formula injection (`src/lib/csv.ts`).
+- Error pages never show raw error messages.
