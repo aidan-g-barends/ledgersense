@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { AppHeader } from "@/components/layout/app-header";
 import { Sidebar } from "@/components/layout/sidebar";
+import { ToastProvider } from "@/components/ui/toast-provider"; // NEW
+
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -12,6 +14,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         Skip to main content
       </a>
 
+ return (
+    <ToastProvider>{/* NEW: every page in the app can now show toasts */}
+      {/* ...everything that was already here stays exactly the same... */}
+    </ToastProvider>
+  );
       <Sidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">
