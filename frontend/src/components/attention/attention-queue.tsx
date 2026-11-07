@@ -5,11 +5,14 @@ import { ShieldCheck } from "lucide-react";
 import { listFlags, reviewFlag, USE_MOCK } from "@/lib/flags";
 import type { AnomalyFlag, FlagStatus, ReviewDecision } from "@/lib/types";
 import { formatMoney } from "@/lib/money";
+import { card } from "@/lib/ui";
 import { FormError } from "@/components/auth/form-error";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Segmented } from "@/components/ui/segmented";
-import { card } from "@/lib/ui";
+import { useToast } from "@/components/ui/toast-provider";
 import { FlagCard } from "./flag-card";
+import { FlagDrawer } from "./flag-drawer";
+import { AttentionToolbar, type RuleFilter } from "./attention-toolbar";
 import { SEVERITY_RANK } from "./flag-styles";
 
 const TABS: { value: FlagStatus; label: string }[] = [
@@ -21,11 +24,13 @@ const TABS: { value: FlagStatus; label: string }[] = [
 type Result = { key: FlagStatus; flags?: AnomalyFlag[]; error?: string };
 
 export function AttentionQueue() {
+  const toast = useToast(); // CHANGED: toasts replace the old `notice` state
   const [status, setStatus] = useState<FlagStatus>("OPEN");
+  const [rule, setRule] = useState<RuleFilter>("ALL"); // NEW
   const [result, setResult] = useState<Result | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<AnomalyFlag | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -41,19 +46,17 @@ export function AttentionQueue() {
     };
   }, [status]);
 
-  const loading = result?.key !== status; // same derived-loading trick as the transactions page
+  const loading = result?.key !== status;
 
-  // Critical first, then newest
+  // CHANGED: filter by rule first. filter() makes a NEW array, so sorting it is safe.
   const flags = useMemo(
     () =>
-      [...(result?.flags ?? [])].sort(
-        (a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || b.createdAt.localeCompare(a.createdAt),
-      ),
-    [result],
+      (result?.flags ?? [])
+        .filter((f) => rule === "ALL" || f.rule === rule)
+        .sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || b.createdAt.localeCompare(a.createdAt)),
+    [result, rule],
   );
 
-  // NEW: "R x at risk" = total of the flagged transactions. One transaction can have
-  // two flags (Seaview Grill), so count each transaction only once.
   const atRisk = useMemo(() => {
     const seen = new Map<string, number>();
     for (const f of flags) seen.set(f.transaction.id, Math.abs(f.transaction.amount));
@@ -63,12 +66,11 @@ export function AttentionQueue() {
   async function handleReview(flag: AnomalyFlag, decision: ReviewDecision) {
     setBusyId(flag.id);
     setError(null);
-    setNotice(null);
     try {
       await reviewFlag(flag.id, decision);
-      // Remove it from this list straight away. It now lives in the other tab.
       setResult((r) => (r?.flags ? { ...r, flags: r.flags.filter((f) => f.id !== flag.id) } : r));
-      setNotice(decision === "LEGITIMATE" ? "Marked as fine." : "Marked as disputed.");
+      setSelected(null);
+      toast.success(decision === "LEGITIMATE" ? "Marked as fine." : "Marked as disputed."); // CHANGED
     } catch {
       setError("Could not save your review. Try again.");
     } finally {
@@ -84,15 +86,11 @@ export function AttentionQueue() {
         </p>
       )}
 
-      <Segmented
-        options={TABS}
-        value={status}
-        label="Flag status"
-        onChange={(next) => {
-          setStatus(next);
-          setNotice(null);
-        }}
-      />
+      {/* CHANGED: tabs on the left, filter + export on the right */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Segmented options={TABS} value={status} onChange={setStatus} label="Flag status" />
+        <AttentionToolbar rule={rule} onRuleChange={setRule} flags={flags} status={status} />
+      </div>
 
       {status === "OPEN" && !loading && flags.length > 0 && (
         <div className={`${card} flex flex-wrap items-baseline gap-x-6 gap-y-1 p-4`}>
@@ -105,7 +103,6 @@ export function AttentionQueue() {
         </div>
       )}
 
-      {notice && <p role="status" className="text-sm text-positive">{notice}</p>}
       <FormError message={error ?? result?.error ?? null} />
 
       {loading && (
@@ -119,19 +116,29 @@ export function AttentionQueue() {
       {!loading && flags.length === 0 && !result?.error && (
         <EmptyState
           icon={ShieldCheck}
-          title={status === "OPEN" ? "All clear" : "Nothing here yet"}
+          // NEW: a different message when it's the FILTER hiding everything
+          title={rule !== "ALL" ? "No flags for this rule" : status === "OPEN" ? "All clear" : "Nothing here yet"}
           description={
-            status === "OPEN"
-              ? "Nothing needs your attention right now. New imports are checked automatically."
-              : "Flags you review will show up here."
+            rule !== "ALL"
+              ? "Try another rule, or switch back to All rules."
+              : status === "OPEN"
+                ? "Nothing needs your attention right now. New imports are checked automatically."
+                : "Flags you review will show up here."
           }
         />
       )}
 
       {!loading &&
         flags.map((flag) => (
-          <FlagCard key={flag.id} flag={flag} busy={busyId === flag.id} onReview={handleReview} />
+          <FlagCard key={flag.id} flag={flag} busy={busyId === flag.id} onReview={handleReview} onOpen={setSelected} />
         ))}
+
+      <FlagDrawer
+        flag={selected}
+        busy={busyId !== null && busyId === selected?.id}
+        onClose={() => setSelected(null)}
+        onReview={handleReview}
+      />
     </div>
   );
 }
