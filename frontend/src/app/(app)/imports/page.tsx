@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { ImportsScreen } from "@/components/imports/imports-screen";
+
+export const metadata: Metadata = { title: "Imports · LedgerSense" };
 
 export default function ImportsPage() {
   return (

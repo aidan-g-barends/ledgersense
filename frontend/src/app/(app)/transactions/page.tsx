@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { TransactionsView } from "@/components/transactions/transactions-view";
+
+export const metadata: Metadata = { title: "Transactions · LedgerSense" };
 
 export default function TransactionsPage() {
   return (

@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/page-header";
 import { BusinessSection } from "@/components/settings/business-section";
 import { BankAccountsSection } from "@/components/settings/bank-accounts-section";
 import { RulesSection } from "@/components/settings/rules-section";
 import { ActivitySection } from "@/components/settings/activity-section"; // NEW
+
+export const metadata: Metadata = { title: "Settings · LedgerSense" };
 
 export default function SettingsPage() {
   return (

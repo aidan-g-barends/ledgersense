@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, LoaderCircle, ShieldAlert } from "lucide-react";
+import { Check, LoaderCircle, PanelRightOpen, ShieldAlert } from "lucide-react";
 import type { AnomalyFlag, ReviewDecision } from "@/lib/types";
 import { formatDate, formatDateTime, formatMoney, formatRelative } from "@/lib/money";
 import { btnSecondary, card, labelCaps } from "@/lib/ui";
@@ -10,10 +10,11 @@ type Props = {
   flag: AnomalyFlag;
   busy: boolean;
   onReview: (flag: AnomalyFlag, decision: ReviewDecision) => void;
+  onOpen: (flag: AnomalyFlag) => void; // opens the details drawer
 };
 
 // NEW: one flag. The left stripe colour = severity (the design system's "anomaly callout").
-export function FlagCard({ flag, busy, onReview }: Props) {
+export function FlagCard({ flag, busy, onReview, onOpen }: Props) {
   const severity = SEVERITY_STYLES[flag.severity];
   const tx = flag.transaction;
 
@@ -65,12 +66,22 @@ export function FlagCard({ flag, busy, onReview }: Props) {
             <ShieldAlert className="size-4" aria-hidden="true" />
             Dispute
           </button>
+          <button type="button" onClick={() => onOpen(flag)} className={`${btnSecondary} ml-auto`}>
+            <PanelRightOpen className="size-4" aria-hidden="true" />
+            Details
+          </button>
         </div>
       ) : (
-        <p className="text-xs text-fg-faint">
-          Marked {flag.status === "LEGITIMATE" ? "as fine" : "as disputed"}
-          {flag.reviewedAt && ` on ${formatDateTime(flag.reviewedAt)}`}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-fg-faint">
+            Marked {flag.status === "LEGITIMATE" ? "as fine" : "as disputed"}
+            {flag.reviewedAt && ` on ${formatDateTime(flag.reviewedAt)}`}
+          </p>
+          <button type="button" onClick={() => onOpen(flag)} className={btnSecondary}>
+            <PanelRightOpen className="size-4" aria-hidden="true" />
+            Details
+          </button>
+        </div>
       )}
     </article>
   );
