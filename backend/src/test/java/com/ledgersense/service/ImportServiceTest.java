@@ -8,6 +8,7 @@ import com.ledgersense.importer.CsvStatementParser;
 import com.ledgersense.importer.ParseResult;
 import com.ledgersense.repository.BankTransactionRepository;
 import com.ledgersense.repository.ImportBatchRepository;
+import com.ledgersense.service.impl.IAnomalyDetectionService; // NEW
 import com.ledgersense.service.impl.IBankAccountService;
 import com.ledgersense.service.impl.ICategoryRuleService;
 import com.ledgersense.service.impl.IMerchantService;
@@ -42,6 +43,9 @@ class ImportServiceTest {
     @Mock
     private IMerchantService merchantService;
 
+    @Mock
+    private IAnomalyDetectionService anomalyDetectionService; // NEW
+
     private ImportService importService;
     private final UUID orgId = UUID.randomUUID();
     private final UUID accountId = UUID.randomUUID();
@@ -52,7 +56,8 @@ class ImportServiceTest {
     @BeforeEach
     void setUp() {
         importService = new ImportService(new CsvStatementParser(), bankAccountService,
-                categoryRuleService, merchantService, importBatchRepository, bankTransactionRepository); // CHANGED
+                categoryRuleService, merchantService, importBatchRepository, bankTransactionRepository,
+                anomalyDetectionService); // CHANGED
     }
 
     private MockMultipartFile csv(String name, String content) {

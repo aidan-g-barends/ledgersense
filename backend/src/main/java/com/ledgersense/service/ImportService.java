@@ -6,6 +6,7 @@ import com.ledgersense.factory.ImportBatchFactory;
 import com.ledgersense.importer.*;
 import com.ledgersense.repository.BankTransactionRepository;
 import com.ledgersense.repository.ImportBatchRepository;
+import com.ledgersense.service.impl.IAnomalyDetectionService; // NEW
 import com.ledgersense.service.impl.IBankAccountService;
 import com.ledgersense.service.impl.ICategoryRuleService;
 import com.ledgersense.service.impl.IImportService;
@@ -39,19 +40,22 @@ public class ImportService implements IImportService {
     private final IMerchantService merchantService;                    // NEW
     private final ImportBatchRepository importBatchRepository;
     private final BankTransactionRepository bankTransactionRepository;
+    private final IAnomalyDetectionService anomalyDetectionService; // NEW
 
     public ImportService(CsvStatementParser csvStatementParser,
                          IBankAccountService bankAccountService,
                          ICategoryRuleService categoryRuleService,
                          IMerchantService merchantService,
                          ImportBatchRepository importBatchRepository,
-                         BankTransactionRepository bankTransactionRepository) {
+                         BankTransactionRepository bankTransactionRepository,
+                         IAnomalyDetectionService anomalyDetectionService) { // NEW
         this.csvStatementParser = csvStatementParser;
         this.bankAccountService = bankAccountService;
         this.categoryRuleService = categoryRuleService;
         this.merchantService = merchantService;
         this.importBatchRepository = importBatchRepository;
         this.bankTransactionRepository = bankTransactionRepository;
+        this.anomalyDetectionService = anomalyDetectionService; // NEW
     }
 
     @Override
@@ -140,12 +144,18 @@ public class ImportService implements IImportService {
 
         // STEP 6: save in one go, record the stats on the batch (dirty checking saves it)
         bankTransactionRepository.saveAll(toSave);
+
+        // STEP 7 (NEW): check the new rows for anomalies. Same DB transaction on purpose:
+        // if detection crashes, the import rolls back too, so you never get "imported but never checked".
+        int flagged = anomalyDetectionService.detect(orgId, toSave);
+
         int total = parsed.rows().size() + parsed.errors().size();
         batch.complete(total, toSave.size(), total - toSave.size(), Instant.now());
 
         return new ImportResult(batch.getId(), batch.getFileName(), total, toSave.size(), duplicates,
                 parsed.errors().size() + rejected,
-                parsed.errors().stream().limit(MAX_ERRORS_RETURNED).toList());
+                parsed.errors().stream().limit(MAX_ERRORS_RETURNED).toList(),
+                flagged); // NEW
     }
 
     // NEW: newest imports first, this org only

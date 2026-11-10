@@ -54,7 +54,8 @@ public class ImportController {
                 current.orgId(), bankAccountId, file, mapping.isProvided() ? mapping.toMapping() : null);
 
         auditService.record(AuditAction.IMPORT_COMPLETED, current.orgId(), current.id(), result.batchId(),
-                result.fileName() + ": " + result.imported() + " imported, " + result.duplicates() + " duplicates");
+                result.fileName() + ": " + result.imported() + " imported, " + result.duplicates()
+                        + " duplicates, " + result.flagged() + " flagged"); // CHANGED: + flagged
 
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
