@@ -49,6 +49,7 @@ export type ImportResult = {
   duplicates: number;
   errorCount: number;
   errors: RowError[];
+  flagged: number;
 };
 
 export type ImportBatch = {
