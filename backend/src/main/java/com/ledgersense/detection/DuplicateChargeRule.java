@@ -37,7 +37,7 @@ public class DuplicateChargeRule implements DetectionRule {
             if (!tx.isMoneyOut() || tx.getAmount().abs().compareTo(MIN_AMOUNT) < 0) {
                 continue;
             }
-            String key = merchantKey(tx) + "|" + tx.getPostedOn() + "|" + tx.getAmount().toPlainString();
+            String key = MerchantKey.of(tx) + "|" + tx.getPostedOn() + "|" + tx.getAmount().toPlainString(); // CHANGED
             sameCharge.computeIfAbsent(key, k -> new ArrayList<>()).add(tx);
         }
 
@@ -61,19 +61,12 @@ public class DuplicateChargeRule implements DetectionRule {
         return flags;
     }
 
-    // WHY prefer merchantId: "CLOUD HOST ****5678" and "CLOUD HOST ****9999" are the same merchant
-    private String merchantKey(BankTransaction tx) {
-        return tx.getMerchantId() != null
-                ? tx.getMerchantId().toString()
-                : tx.getDescription().toUpperCase(Locale.ROOT);
-    }
-
     // Same merchant + same amount in an EARLIER month = a regular bill (subscription, hosting, rent)
     private boolean chargedInEarlierMonth(BankTransaction charge, List<BankTransaction> window) {
         YearMonth month = YearMonth.from(charge.getPostedOn());
-        String who = merchantKey(charge);
+        String who = MerchantKey.of(charge); // CHANGED
         for (BankTransaction tx : window) {
-            if (merchantKey(tx).equals(who)
+            if (MerchantKey.of(tx).equals(who) // CHANGED
                     && tx.getAmount().compareTo(charge.getAmount()) == 0 // compareTo: 299.0 equals 299.00
                     && YearMonth.from(tx.getPostedOn()).isBefore(month)) {
                 return true;
