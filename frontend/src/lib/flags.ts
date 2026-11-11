@@ -2,9 +2,8 @@ import { api } from "@/lib/api";
 import type { AnomalyFlag, FlagStatus, ReviewDecision } from "@/lib/types";
 import { MOCK_FLAGS } from "@/lib/mock/flags";
 
-// NEW: CONTRACT-FIRST SWITCH. Every flag call in the app goes through these two functions.
-// When the backend endpoints exist, change this to false. Nothing else in the UI changes.
-export const USE_MOCK = true;
+// CHANGED: the backend exists now. The Attention Queue, drawer and Overview preview all go live.
+export const USE_MOCK = false;
 
 // In-memory copy so reviews "stick" while you click around (resets on page refresh)
 let mockStore: AnomalyFlag[] = structuredClone(MOCK_FLAGS);
