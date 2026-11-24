@@ -49,6 +49,9 @@ public interface BankTransactionRepository extends JpaRepository<BankTransaction
 
     // NEW: fallback when a row has no merchant: match the exact description instead
     List<BankTransaction> findTop12ByOrgIdAndDescriptionOrderByPostedOnDescCreatedAtDesc(UUID orgId, String description);
+
+    // NEW: the org's most recent transaction. Tells the Overview which month is "this month".
+    Optional<BankTransaction> findFirstByOrgIdOrderByPostedOnDescCreatedAtDesc(UUID orgId);
 }
 
 
