@@ -60,4 +60,21 @@ class InsightsControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.transactionCount").value(0));
     }
+
+    // NEW
+    @Test
+    void timeline_thirtyDays() throws Exception {
+        Cookie token = TestAuth.loginAs(mockMvc, "Timeline Co", "timeline@ledger.co.za");
+        importFixture(token);
+
+        mockMvc.perform(get("/api/insights/timeline").param("days", "30").cookie(token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(30))
+                .andExpect(jsonPath("$[0].date").value("2026-09-15"))
+                .andExpect(jsonPath("$[29].date").value("2026-10-14"))
+                .andExpect(jsonPath("$[29].runningNet").value(3458.41));
+
+        mockMvc.perform(get("/api/insights/timeline").param("days", "5").cookie(token))
+                .andExpect(status().isBadRequest());
+    }
 }
