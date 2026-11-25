@@ -10,6 +10,9 @@ import com.ledgersense.service.impl.ICategoryService;
 import com.ledgersense.service.impl.IInsightsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.ledgersense.insights.TimelinePoint;              // NEW
+import com.ledgersense.repository.IAnomalyFlagRepository;   // NEW
+import java.time.LocalDate;                                 // NEW
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -21,13 +24,18 @@ public class InsightsService implements IInsightsService {
 
     static final int MONTHS = 6;
     static final int TOP_CATEGORIES = 6;
+    static final int MIN_DAYS = 7;    // NEW
+    static final int MAX_DAYS = 366;  // NEW: a year is plenty. Stops someone asking for days=1000000.
 
     private final BankTransactionRepository bankTransactionRepository;
     private final ICategoryService categoryService;
+    private final IAnomalyFlagRepository anomalyFlagRepository; // NEW
 
-    public InsightsService(BankTransactionRepository bankTransactionRepository, ICategoryService categoryService) {
+    public InsightsService(BankTransactionRepository bankTransactionRepository, ICategoryService categoryService,
+                           IAnomalyFlagRepository anomalyFlagRepository) { // CHANGED
         this.bankTransactionRepository = bankTransactionRepository;
         this.categoryService = categoryService;
+        this.anomalyFlagRepository = anomalyFlagRepository; // NEW
     }
 
     @Override
@@ -85,6 +93,49 @@ public class InsightsService implements IInsightsService {
 
         return new InsightsSummary(month, in, out, in.subtract(out), change, count, months,
                 topCategories(orgId, spendByCategory));
+    }
+
+    // NEW
+    @Override
+    @Transactional(readOnly = true)
+    public List<TimelinePoint> timeline(UUID orgId, int days) {
+        if (days < MIN_DAYS || days > MAX_DAYS) {
+            throw new IllegalArgumentException("days must be between " + MIN_DAYS + " and " + MAX_DAYS);
+        }
+        Optional<BankTransaction> latest = bankTransactionRepository.findFirstByOrgIdOrderByPostedOnDescCreatedAtDesc(orgId);
+        if (latest.isEmpty()) {
+            return List.of();
+        }
+
+        LocalDate to = latest.get().getPostedOn();
+        LocalDate from = to.minusDays(days - 1); // - 1 because both ends count: 30 days ending today
+
+        Map<LocalDate, BigDecimal> moneyIn = new HashMap<>();
+        Map<LocalDate, BigDecimal> moneyOut = new HashMap<>();
+        for (BankTransaction tx : bankTransactionRepository
+                .findAllByOrgIdAndPostedOnBetweenOrderByPostedOnAscCreatedAtAsc(orgId, from, to)) {
+            if (tx.isMoneyOut()) {
+                moneyOut.merge(tx.getPostedOn(), tx.getAmount().abs(), BigDecimal::add);
+            } else {
+                moneyIn.merge(tx.getPostedOn(), tx.getAmount(), BigDecimal::add);
+            }
+        }
+
+        Map<LocalDate, Integer> flagsPerDay = new HashMap<>();
+        for (LocalDate day : anomalyFlagRepository.findFlaggedDays(orgId, from, to)) {
+            flagsPerDay.merge(day, 1, Integer::sum); // count: +1 for every flag on that day
+        }
+
+        // Walk EVERY day, even quiet ones, so the chart's line has no gaps
+        List<TimelinePoint> points = new ArrayList<>(days);
+        BigDecimal running = BigDecimal.ZERO;
+        for (LocalDate day = from; !day.isAfter(to); day = day.plusDays(1)) {
+            BigDecimal in = moneyIn.getOrDefault(day, BigDecimal.ZERO);
+            BigDecimal out = moneyOut.getOrDefault(day, BigDecimal.ZERO);
+            running = running.add(in).subtract(out);
+            points.add(new TimelinePoint(day, in, out, running, flagsPerDay.getOrDefault(day, 0)));
+        }
+        return points;
     }
 
     private List<CategorySpend> topCategories(UUID orgId, Map<UUID, BigDecimal> spendByCategory) {

@@ -3,6 +3,7 @@ package com.ledgersense.service;
 import com.ledgersense.domain.BankTransaction;
 import com.ledgersense.insights.InsightsSummary;
 import com.ledgersense.repository.BankTransactionRepository;
+import com.ledgersense.repository.IAnomalyFlagRepository; // NEW
 import com.ledgersense.service.impl.ICategoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,12 +30,15 @@ class InsightsServiceTest {
     @Mock
     private ICategoryService categoryService;
 
+    @Mock
+    private IAnomalyFlagRepository anomalyFlagRepository; // NEW
+
     private InsightsService insightsService;
     private final UUID orgId = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
-        insightsService = new InsightsService(bankTransactionRepository, categoryService);
+        insightsService = new InsightsService(bankTransactionRepository, categoryService, anomalyFlagRepository); // CHANGED
     }
 
     @Test
