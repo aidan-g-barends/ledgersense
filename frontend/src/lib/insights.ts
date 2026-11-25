@@ -3,7 +3,7 @@ import type { InsightsSummary, TimelinePoint } from "@/lib/types"; // CHANGED: +
 import { MOCK_SUMMARY } from "@/lib/mock/insights";
 import { buildMockTimeline } from "@/lib/mock/timeline"; // NEW
 
-export const USE_MOCK = true;
+export const USE_MOCK = false; // CHANGED: summary and timeline both have real endpoints now
 
 // NEW: one shared fake delay instead of repeating the setTimeout line
 function wait(ms: number) {

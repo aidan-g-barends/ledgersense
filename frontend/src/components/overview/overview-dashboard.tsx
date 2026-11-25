@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { FileUp } from "lucide-react";
-import { getInsightsSummary, USE_MOCK } from "@/lib/insights"; // CHANGED: the client, not the mock dataimport type { InsightsSummary } from "@/lib/types";
+import { getInsightsSummary, USE_MOCK } from "@/lib/insights";
+import type { InsightsSummary } from "@/lib/types";
 import { formatMoney, formatMonth } from "@/lib/money";
 import { btnPrimary } from "@/lib/ui";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -12,7 +13,6 @@ import { StatTile } from "./stat-tile";
 import { CashFlowChart } from "./cash-flow-chart";
 import { TopCategories } from "./top-categories";
 import { AttentionPreview } from "./attention-preview";
-import { InsightsSummary } from "@/lib/types";
 
 type Result = { summary?: InsightsSummary; error?: string };
 
